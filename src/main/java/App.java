@@ -7,6 +7,7 @@ import java.util.Scanner;
 public class App {
 
     public static void main(String[] args) {
+        DatabaseUtil.initializeDatabase();
         Scanner input = new Scanner(System.in);
         System.out.println("Welcome to the Ultimate Library Group!");
         System.out.println("Are you an Employee or a Member?");
@@ -42,11 +43,11 @@ public class App {
     }
 
     public static void login(int userType, Scanner input) {
-        System.out.print("Username: ");
-        String username = input.nextLine();
+        System.out.print("Email: ");
+        String email = input.nextLine();
         System.out.print("Password: ");
         String password = input.nextLine();
-        if (verifyLogin(username, password)) {
+        if (verifyLogin(email, password)) {
             if (userType == 1) { // Employee
                 new EmployeeServices(input).showEmployeeHomeScreen();
             } else { // Member
@@ -57,34 +58,38 @@ public class App {
         }
     }
 
-    public static boolean verifyLogin(String username, String password) {
-        try (Connection conn = DatabaseUtil.connect()) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM user WHERE username = ? AND password = ?");
-            stmt.setString(1, username);
-            stmt.setString(2, password);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                System.out.println("You have logged in successfully.");
-                return true;
-            }
-        } catch (SQLException e) {
-            System.out.println("Login failed due to system error: " + e.getMessage());
-        }
-        return false;
-    }
+	public static boolean verifyLogin(String email, String password) {
+		try (Connection conn = DatabaseUtil.connect()) {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT * FROM \"User\" WHERE Email = ? AND Password = ?"
+			);
+			stmt.setString(1, email);
+			stmt.setString(2, password);
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()) {
+				System.out.println("You have logged in successfully.");
+				return true;
+			} else {
+				System.out.println("Invalid email or password.");
+			}
+		} catch (SQLException e) {
+			System.out.println("Login failed due to system error: " + e.getMessage());
+		}
+		return false;
+	}	
 
     public static void signUp(Scanner input) {
-        System.out.print("Username: ");
-        String username = input.nextLine();
+        System.out.print("Email: ");
+        String email = input.nextLine();
         System.out.print("Password: ");
         String password = input.nextLine();
-        saveSignUp(username, password);
+        saveSignUp(email, password);
     }
 
-    public static void saveSignUp(String username, String password) {
+    public static void saveSignUp(String email, String password) {
         try (Connection conn = DatabaseUtil.connect()) {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO user (username, password) VALUES (?, ?)");
-            stmt.setString(1, username);
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO user (email, password) VALUES (?, ?)");
+            stmt.setString(1, email);
             stmt.setString(2, password);
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
