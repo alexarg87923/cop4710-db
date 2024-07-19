@@ -1,18 +1,22 @@
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 public class MemberServices {
 
     private Scanner input;
     private Connection conn;
+    private BookService bookService;
 
     public MemberServices(Scanner input) {
         this.input = input;
         try {
             this.conn = DatabaseUtil.connect();
+            AuthorService authorService = new AuthorService(input, conn);
+            GenreService genreService = new GenreService(input, conn);
+            this.bookService = new BookService(input, conn, authorService, genreService);
         } catch (SQLException e) {
             System.out.println("Error connecting to the database: " + e.getMessage());
         }
@@ -32,10 +36,10 @@ public class MemberServices {
 
             switch (option) {
                 case 1:
-                    searchBooks();
+					bookService.findBook();
                     break;
                 case 2:
-                    listBooks();
+					bookService.listBooks();
                     break;
                 case 3:
                     checkoutBook();
@@ -53,44 +57,52 @@ public class MemberServices {
         } while (option != 5);
     }
 
-    private void searchBooks() {
-        System.out.print("Enter book title or part of title to search: ");
-        String title = input.nextLine();
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books WHERE lower(title) LIKE ?");
-            stmt.setString(1, "%" + title.toLowerCase() + "%");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Book ID: " + rs.getInt("bookid") + ", Title: " + rs.getString("title"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error searching books: " + e.getMessage());
-        }
-    }
-
-    private void listBooks() {
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Book ID: " + rs.getInt("bookid") + ", Title: " + rs.getString("title"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error listing books: " + e.getMessage());
-        }
-    }
 
     private void checkoutBook() {
         System.out.print("Enter Book ID to checkout: ");
         int bookId = Integer.parseInt(input.nextLine());
-        // Implement checkout logic
-        System.out.println("Checkout process for Book ID: " + bookId + " (Functionality not fully implemented yet)");
+        System.out.print("Enter Member ID: ");
+        int memberId = Integer.parseInt(input.nextLine());
+
+        LocalDate loanDate = LocalDate.now();
+        LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
+            stmt.setInt(1, bookId);
+            stmt.setInt(2, memberId);
+            stmt.setDate(3, java.sql.Date.valueOf(loanDate));
+            stmt.setDate(4, java.sql.Date.valueOf(dueDate));
+            stmt.executeUpdate();
+            System.out.println("Book checked out successfully!");
+        } catch (SQLException e) {
+            System.out.println("Failed to checkout book: " + e.getMessage());
+        }
     }
 
     private void checkInBook() {
         System.out.print("Enter Book ID to check in: ");
         int bookId = Integer.parseInt(input.nextLine());
-        // Implement check-in logic
-        System.out.println("Check-in process for Book ID: " + bookId + " (Functionality not fully implemented yet)");
+        System.out.print("Enter Member ID: ");
+        int memberId = Integer.parseInt(input.nextLine());
+
+        LocalDate returnDate = LocalDate.now();
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+            stmt.setDate(1, java.sql.Date.valueOf(returnDate));
+            stmt.setInt(2, bookId);
+            stmt.setInt(3, memberId);
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Book checked in successfully!");
+            } else {
+                System.out.println("No matching loan record found or the book is already returned.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Failed to check in book: " + e.getMessage());
+        }
     }
 }
