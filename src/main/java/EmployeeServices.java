@@ -1,6 +1,4 @@
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Scanner;
 
@@ -8,11 +6,17 @@ public class EmployeeServices {
 
     private Scanner input;
     private Connection conn;
-
+	private GenreService genreService;
+	private AuthorService authorService;
+	private BookService bookService;
+	
     public EmployeeServices(Scanner input) {
         this.input = input;
         try {
             this.conn = DatabaseUtil.connect();
+			this.genreService = new GenreService(input, conn);
+			this.authorService = new AuthorService(input, conn);
+			this.bookService = new BookService(input, conn, authorService, genreService);
         } catch (SQLException e) {
             System.out.println("Error connecting to the database: " + e.getMessage());
         }
@@ -23,140 +27,81 @@ public class EmployeeServices {
         do {
             System.out.println("Employee Home Screen:");
             System.out.println("1. Add Book");
-            System.out.println("2. Checkout Book for Member");
-            System.out.println("3. Check In Book for Member");
-            System.out.println("4. Remove Book");
-            System.out.println("5. List Books");
-            System.out.println("6. Edit Book Entry");
-            System.out.println("7. Find Book");
+            System.out.println("2. Remove Book");
+            System.out.println("3. List Books");
+            System.out.println("4. Edit Book Entry");
+            System.out.println("5. Find Book");
+            System.out.println("6. Checkout Book for Member");
+            System.out.println("7. Check In Book for Member");
             System.out.println("8. Extend Loan for Member");
-            System.out.println("9. Log Out");
+			System.out.println("9. Add Author");
+			System.out.println("10. Remove Author");
+			System.out.println("11. List Authors");
+			System.out.println("12. Edit Author");
+			System.out.println("13. Add Genre");
+			System.out.println("14. Remove Genre");
+			System.out.println("15. List Genre");
+			System.out.println("16. Edit Genre");
+            System.out.println("17. Log Out");
             System.out.print("Select an option: ");
             option = Integer.parseInt(input.nextLine());
 
             switch (option) {
                 case 1:
-                    addBook();
+					bookService.addBook();
                     break;
                 case 2:
-                    checkoutBookForMember();
+					bookService.removeBook();
                     break;
                 case 3:
-                    checkInBookForMember();
+					bookService.listBooks();
                     break;
                 case 4:
-                    removeBook();
+					bookService.editBookEntry();;
                     break;
                 case 5:
-                    listBooks();
+					bookService.findBook();
                     break;
                 case 6:
-                    editBookEntry();
+					bookService.checkoutBookForMember();
                     break;
                 case 7:
-                    findBook();
+					bookService.checkInBookForMember();
                     break;
                 case 8:
-                    extendLoanForMember();
+					bookService.extendLoanForMember();
                     break;
                 case 9:
-                    System.out.println("Logging out...");
+					authorService.addAuthor();
                     break;
+                case 10:
+					authorService.removeAuthor();
+                    break;
+                case 11:
+					authorService.listAuthors();
+                    break;
+                case 12:
+					authorService.editAuthor();
+                    break;
+                case 13:
+					genreService.addGenre();
+                    break;
+                case 14:
+					genreService.removeGenre();
+                    break;
+                case 15:
+					genreService.listGenres();
+                    break;
+                case 16:
+					genreService.editGenre();
+                    break;
+                case 17:
+                    System.out.println("Logging out...");
+                    return; // Exit the loop on logout
                 default:
                     System.out.println("Invalid option. Please try again.");
                     break;
             }
-        } while (option != 9);
-    }
-
-    private void addBook() {
-        System.out.println("Enter the details of the book to add:");
-        System.out.print("Title: ");
-        String title = input.nextLine();
-        System.out.print("Author ID: ");
-        int authorId = Integer.parseInt(input.nextLine());
-        System.out.print("Genre ID: ");
-        int genreId = Integer.parseInt(input.nextLine());
-        System.out.print("Year of Publication: ");
-        int year = Integer.parseInt(input.nextLine());
-        System.out.print("Quantity: ");
-        int quantity = Integer.parseInt(input.nextLine());
-
-        try {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO books (title, authorid, genreid, bookyear, quantity) VALUES (?, ?, ?, ?, ?)");
-            stmt.setString(1, title);
-            stmt.setInt(2, authorId);
-            stmt.setInt(3, genreId);
-            stmt.setInt(4, year);
-            stmt.setInt(5, quantity);
-            stmt.executeUpdate();
-            System.out.println("Book added successfully!");
-        } catch (SQLException e) {
-            System.out.println("Failed to add book: " + e.getMessage());
-        }
-    }
-
-    private void checkoutBookForMember() {
-        // Placeholder: Implement actual checkout logic
-        System.out.println("Checkout book for member (functionality not fully implemented yet).");
-    }
-
-    private void checkInBookForMember() {
-        // Placeholder: Implement actual check-in logic
-        System.out.println("Check in book for member (functionality not fully implemented yet).");
-    }
-
-    private void removeBook() {
-        System.out.print("Enter Book ID to remove: ");
-        int bookId = Integer.parseInt(input.nextLine());
-        try {
-            PreparedStatement stmt = conn.prepareStatement("DELETE FROM books WHERE bookid = ?");
-            stmt.setInt(1, bookId);
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("Book removed successfully!");
-            } else {
-                System.out.println("No book found with the specified ID.");
-            }
-        } catch (SQLException e) {
-            System.out.println("Error removing book: " + e.getMessage());
-        }
-    }
-
-    private void listBooks() {
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Book ID: " + rs.getInt("bookid") + ", Title: " + rs.getString("title"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error listing books: " + e.getMessage());
-        }
-    }
-
-    private void editBookEntry() {
-        // Placeholder: Implement actual edit logic
-        System.out.println("Edit book entry (functionality not fully implemented yet).");
-    }
-
-    private void findBook() {
-        System.out.print("Enter title or part of title to search: ");
-        String title = input.nextLine();
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books WHERE lower(title) LIKE ?");
-            stmt.setString(1, "%" + title.toLowerCase() + "%");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Book ID: " + rs.getInt("bookid") + ", Title: " + rs.getString("title"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error finding book: " + e.getMessage());
-        }
-    }
-
-    private void extendLoanForMember() {
-        // Placeholder: Implement actual loan extension logic
-        System.out.println("Extend loan for member (functionality not fully implemented yet).");
+        } while (option != 17); // Exit condition corrected to match the logout optio
     }
 }
