@@ -17,7 +17,11 @@
 -----------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 -- SQL script content to be executed from Java JDBC:
+-- Create Author and Genre tables
 CREATE TABLE IF NOT EXISTS Author (
     AuthorID SERIAL PRIMARY KEY,
     AuthorName VARCHAR(255) NOT NULL UNIQUE
@@ -28,6 +32,7 @@ CREATE TABLE IF NOT EXISTS Genre (
     GenreName VARCHAR(255) NOT NULL
 );
 
+-- Create Books table
 CREATE TABLE IF NOT EXISTS Books (
     BookID SERIAL PRIMARY KEY,
     Title VARCHAR(255) NOT NULL,
@@ -37,28 +42,40 @@ CREATE TABLE IF NOT EXISTS Books (
     Quantity INT NOT NULL
 );
 
+-- Create User table without foreign key constraints
 CREATE TABLE IF NOT EXISTS "User" (
     UserID SERIAL PRIMARY KEY,
     Email VARCHAR(255) UNIQUE NOT NULL,
     Password VARCHAR(255) NOT NULL,
     Name VARCHAR(255) NOT NULL,
     Phone VARCHAR(50),
-    Address VARCHAR(255)
+    Address VARCHAR(255),
+    MemberID INT,
+    EmployeeID INT,
+    CONSTRAINT chk_user_role CHECK (
+        (MemberID IS NOT NULL AND EmployeeID IS NULL) OR 
+        (MemberID IS NULL AND EmployeeID IS NOT NULL)
+    )
 );
 
+-- Create Member and Employee tables
 CREATE TABLE IF NOT EXISTS Member (
     MemberID INT PRIMARY KEY,
-    RegisterDate DATE DEFAULT CURRENT_DATE,
-    CONSTRAINT fk_user FOREIGN KEY (MemberID) REFERENCES "User"(UserID)
+    RegisterDate DATE DEFAULT CURRENT_DATE
 );
 
 CREATE TABLE IF NOT EXISTS Employee (
     EmployeeID INT PRIMARY KEY,
     Position VARCHAR(100),
-    Salary DECIMAL(10, 2),
-    CONSTRAINT fk_user FOREIGN KEY (EmployeeID) REFERENCES "User"(UserID)
+    Salary DECIMAL(10, 2)
 );
 
+-- Alter User table to add foreign key constraints
+ALTER TABLE "User"
+ADD CONSTRAINT fk_member FOREIGN KEY (MemberID) REFERENCES Member(MemberID),
+ADD CONSTRAINT fk_employee FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID);
+
+-- Create BookLoans table
 CREATE TABLE IF NOT EXISTS BookLoans (
     LoanID SERIAL PRIMARY KEY,
     BookID INT REFERENCES Books(BookID),
@@ -69,20 +86,6 @@ CREATE TABLE IF NOT EXISTS BookLoans (
     BookReturn CHAR(1),
     LoanPrice INT
 );
-
--- Members
-INSERT INTO Member (RegisterDate)
-SELECT '2022-01-10' WHERE NOT EXISTS (SELECT 1 FROM Member WHERE RegisterDate = '2022-01-10');
-INSERT INTO Member (RegisterDate)
-SELECT '2022-01-15' WHERE NOT EXISTS (SELECT 1 FROM Member WHERE RegisterDate = '2022-01-15');
-INSERT INTO Member (RegisterDate)
-SELECT '2022-02-01' WHERE NOT EXISTS (SELECT 1 FROM Member WHERE RegisterDate = '2022-02-01');
-INSERT INTO Member (RegisterDate)
-SELECT '2022-03-05' WHERE NOT EXISTS (SELECT 1 FROM Member WHERE RegisterDate = '2022-03-05');
-INSERT INTO Member (RegisterDate)
-SELECT '2022-04-12' WHERE NOT EXISTS (SELECT 1 FROM Member WHERE RegisterDate = '2022-04-12');
-INSERT INTO Member (RegisterDate)
-SELECT '2022-05-20' WHERE NOT EXISTS (SELECT 1 FROM Member WHERE RegisterDate = '2022-05-20');
 
 -- Authors
 INSERT INTO Author (AuthorName)
@@ -112,58 +115,72 @@ SELECT 'Thriller' WHERE NOT EXISTS (SELECT 1 FROM Genre WHERE GenreName = 'Thril
 INSERT INTO Genre (GenreName)
 SELECT 'Historical Fiction' WHERE NOT EXISTS (SELECT 1 FROM Genre WHERE GenreName = 'Historical Fiction');
 
+-- Members
+INSERT INTO Member (MemberID)
+SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM Member WHERE MemberID = 1);
+INSERT INTO Member (MemberID)
+SELECT 2 WHERE NOT EXISTS (SELECT 1 FROM Member WHERE MemberID = 2);
+INSERT INTO Member (MemberID)
+SELECT 3 WHERE NOT EXISTS (SELECT 1 FROM Member WHERE MemberID = 3);
+INSERT INTO Member (MemberID)
+SELECT 4 WHERE NOT EXISTS (SELECT 1 FROM Member WHERE MemberID = 4);
+
 -- Employees
-INSERT INTO Employee (Position, Salary)
-SELECT 'Librarian', 55000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE Position = 'Librarian' AND Salary = 55000.00);
-INSERT INTO Employee (Position, Salary)
-SELECT 'Assistant Librarian', 40000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE Position = 'Assistant Librarian' AND Salary = 40000.00);
-INSERT INTO Employee (Position, Salary)
-SELECT 'Archivist', 45000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE Position = 'Archivist' AND Salary = 45000.00);
-INSERT INTO Employee (Position, Salary)
-SELECT 'Book Keeper', 35000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE Position = 'Book Keeper' AND Salary = 35000.00);
-INSERT INTO Employee (Position, Salary)
-SELECT 'Curator', 47000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE Position = 'Curator' AND Salary = 47000.00);
-INSERT INTO Employee (Position, Salary)
-SELECT 'Security', 30000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE Position = 'Security' AND Salary = 30000.00);
+INSERT INTO Employee (EmployeeID, Position, Salary)
+SELECT 5, 'Librarian', 55000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE EmployeeID = 5);
+INSERT INTO Employee (EmployeeID, Position, Salary)
+SELECT 6, 'Assistant Librarian', 40000.00 WHERE NOT EXISTS (SELECT 1 FROM Employee WHERE EmployeeID = 6);
+
+-- Users
+INSERT INTO "User" (Name, Address, Phone, Email, Password, MemberID)
+SELECT 'John Doe', '123 Elm St', '555-1234', 'john.doe@email.com', 'password123', 1 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'john.doe@email.com');
+INSERT INTO "User" (Name, Address, Phone, Email, Password, MemberID)
+SELECT 'Jane Smith', '456 Oak St', '555-5678', 'jane.smith@email.com', 'password123', 2 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'jane.smith@email.com');
+INSERT INTO "User" (Name, Address, Phone, Email, Password, MemberID)
+SELECT 'Alice Johnson', '321 Maple St', '555-2345', 'alice.johnson@email.com', 'securePass123', 3 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'alice.johnson@email.com');
+INSERT INTO "User" (Name, Address, Phone, Email, Password, MemberID)
+SELECT 'Carl Kent', '654 Willow St', '555-7890', 'carl.kent@email.com', 'securePass123', 4 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'carl.kent@email.com');
+INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID)
+SELECT 'Bob Johnson', '789 Pine St', '555-9012', 'bob.johnson@email.com', 'password123', 5 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'bob.johnson@email.com');
+INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID)
+SELECT 'Diana Prince', '987 Cedar St', '555-4567', 'diana.prince@email.com', 'securePass123', 6 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'diana.prince@email.com');
 
 -- Books
 INSERT INTO Books (Title, AuthorID, GenreID, BookYear, Quantity)
-SELECT 'Harry Potter and the Sorcerer''s Stone', 1, 1, 1997, 3 WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'Harry Potter and the Sorcerer''s Stone');
+SELECT 'Harry Potter and the Sorcerer''s Stone', (SELECT AuthorID FROM Author WHERE AuthorName = 'J.K. Rowling'), (SELECT GenreID FROM Genre WHERE GenreName = 'Fantasy'), 1997, 3
+WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'Harry Potter and the Sorcerer''s Stone');
 INSERT INTO Books (Title, AuthorID, GenreID, BookYear, Quantity)
-SELECT 'A Game of Thrones', 2, 1, 1996, 5 WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'A Game of Thrones');
+SELECT 'A Game of Thrones', (SELECT AuthorID FROM Author WHERE AuthorName = 'George R.R. Martin'), (SELECT GenreID FROM Genre WHERE GenreName = 'Fantasy'), 1996, 5
+WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'A Game of Thrones');
 INSERT INTO Books (Title, AuthorID, GenreID, BookYear, Quantity)
-SELECT 'The Hobbit', 3, 1, 1937, 4 WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'The Hobbit');
+SELECT 'The Hobbit', (SELECT AuthorID FROM Author WHERE AuthorName = 'J.R.R. Tolkien'), (SELECT GenreID FROM Genre WHERE GenreName = 'Fantasy'), 1937, 4
+WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'The Hobbit');
 INSERT INTO Books (Title, AuthorID, GenreID, BookYear, Quantity)
-SELECT 'American Gods', 4, 2, 2001, 2 WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'American Gods');
+SELECT 'American Gods', (SELECT AuthorID FROM Author WHERE AuthorName = 'Neil Gaiman'), (SELECT GenreID FROM Genre WHERE GenreName = 'Science Fiction'), 2001, 2
+WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'American Gods');
 INSERT INTO Books (Title, AuthorID, GenreID, BookYear, Quantity)
-SELECT 'The Shining', 5, 2, 1977, 4 WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'The Shining');
+SELECT 'The Shining', (SELECT AuthorID FROM Author WHERE AuthorName = 'Stephen King'), (SELECT GenreID FROM Genre WHERE GenreName = 'Thriller'), 1977, 4
+WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'The Shining');
 INSERT INTO Books (Title, AuthorID, GenreID, BookYear, Quantity)
-SELECT 'Murder on the Orient Express', 6, 1, 1934, 3 WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'Murder on the Orient Express');
-
--- Users
-INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID, MemberID)
-SELECT 'John Doe', '123 Elm St', '555-1234', 'john.doe@email.com', 'password123', NULL, 1 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'john.doe@email.com');
-INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID, MemberID)
-SELECT 'Jane Smith', '456 Oak St', '555-5678', 'jane.smith@email.com', 'password123', NULL, 2 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'jane.smith@email.com');
-INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID)
-SELECT 'Bob Johnson', '789 Pine St', '555-9012', 'bob.johnson@email.com', 'password123', 1 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'bob.johnson@email.com');
-INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID, MemberID)
-SELECT 'Alice Johnson', '321 Maple St', '555-2345', 'alice.johnson@email.com', 'securePass123', NULL, 3 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'alice.johnson@email.com');
-INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID, MemberID)
-SELECT 'Carl Kent', '654 Willow St', '555-7890', 'carl.kent@email.com', 'securePass123', NULL, 4 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'carl.kent@email.com');
-INSERT INTO "User" (Name, Address, Phone, Email, Password, EmployeeID)
-SELECT 'Diana Prince', '987 Cedar St', '555-4567', 'diana.prince@email.com', 'securePass123', 2 WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE Email = 'diana.prince@email.com');
+SELECT 'Murder on the Orient Express', (SELECT AuthorID FROM Author WHERE AuthorName = 'Agatha Christie'), (SELECT GenreID FROM Genre WHERE GenreName = 'Mystery'), 1934, 3
+WHERE NOT EXISTS (SELECT 1 FROM Books WHERE Title = 'Murder on the Orient Express');
 
 -- Book Loans
 INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookReturn, LoanPrice)
-SELECT 1, 1, '2022-03-01', NULL, '2022-03-15', 'N', 15 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = 1 AND MemberID = 1 AND LoanDate = '2022-03-01');
+SELECT (SELECT BookID FROM Books WHERE Title = 'Harry Potter and the Sorcerer''s Stone'), 1, '2022-03-01', NULL, '2022-03-15', 'N', 15
+WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'Harry Potter and the Sorcerer''s Stone') AND MemberID = 1 AND LoanDate = '2022-03-01');
 INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookReturn, LoanPrice)
-SELECT 2, 2, '2022-03-05', NULL, '2022-03-20', 'N', 15 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = 2 AND MemberID = 2 AND LoanDate = '2022-03-05');
+SELECT (SELECT BookID FROM Books WHERE Title = 'A Game of Thrones'), 2, '2022-03-05', NULL, '2022-03-20', 'N', 15
+WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'A Game of Thrones') AND MemberID = 2 AND LoanDate = '2022-03-05');
 INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookReturn, LoanPrice)
-SELECT 3, 1, '2022-03-10', NULL, '2022-03-25', 'N', 20 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = 3 AND MemberID = 1 AND LoanDate = '2022-03-10');
+SELECT (SELECT BookID FROM Books WHERE Title = 'The Hobbit'), 1, '2022-03-10', NULL, '2022-03-25', 'N', 20
+WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'The Hobbit') AND MemberID = 1 AND LoanDate = '2022-03-10');
 INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookReturn, LoanPrice)
-SELECT 4, 3, '2022-05-01', NULL, '2022-05-15', 'N', 10 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = 4 AND MemberID = 3 AND LoanDate = '2022-05-01');
+SELECT (SELECT BookID FROM Books WHERE Title = 'American Gods'), 3, '2022-05-01', NULL, '2022-05-15', 'N', 10
+WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'American Gods') AND MemberID = 3 AND LoanDate = '2022-05-01');
 INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookReturn, LoanPrice)
-SELECT 5, 4, '2022-05-03', '2022-05-18', '2022-05-17', 'Y', 12 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = 5 AND MemberID = 4 AND LoanDate = '2022-05-03');
+SELECT (SELECT BookID FROM Books WHERE Title = 'The Shining'), 4, '2022-05-03', '2022-05-18', '2022-05-17', 'Y', 12
+WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'The Shining') AND MemberID = 4 AND LoanDate = '2022-05-03');
 INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookReturn, LoanPrice)
-SELECT 6, 3, '2022-06-01', NULL, '2022-06-15', 'N', 8 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = 6 AND MemberID = 3 AND LoanDate = '2022-06-01');
+SELECT (SELECT BookID FROM Books WHERE Title = 'Murder on the Orient Express'), 3, '2022-06-01', NULL, '2022-06-15', 'N', 8
+WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'Murder on the Orient Express') AND MemberID = 3 AND LoanDate = '2022-06-01');
