@@ -3,10 +3,9 @@
 -- Create the database (run this part directly in your PostgreSQL admin tool or psql)
 -- CREATE DATABASE lim;
 
--- Create a user and grant privileges
+-- -- Create a user and grant privileges
 -- CREATE USER root WITH ENCRYPTED PASSWORD 'password';
 -- GRANT ALL PRIVILEGES ON DATABASE lim TO root;
-
 -- SQL script content to be executed from Java JDBC:
 
 CREATE TABLE IF NOT EXISTS Member (

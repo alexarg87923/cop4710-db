@@ -83,14 +83,17 @@ public class App {
         String email = input.nextLine();
         System.out.print("Password: ");
         String password = input.nextLine();
-        saveSignUp(email, password);
+        System.out.print("Name: ");
+        String name = input.nextLine();
+        saveSignUp(email, password, name);
     }
 
-    public static void saveSignUp(String email, String password) {
+    public static void saveSignUp(String email, String password, String name) {
         try (Connection conn = DatabaseUtil.connect()) {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO user (email, password) VALUES (?, ?)");
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO \"User\" (email, password, name) VALUES (?, ?, ?)");
             stmt.setString(1, email);
             stmt.setString(2, password);
+			stmt.setString(3, name);
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
                 System.out.println("You have successfully signed up.");
