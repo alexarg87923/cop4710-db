@@ -37,17 +37,6 @@ CREATE TABLE IF NOT EXISTS Books (
     Quantity INT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS BookLoans (
-    LoanID SERIAL PRIMARY KEY,
-    BookID INT REFERENCES Books(BookID),
-    MemberID INT REFERENCES Member(MemberID),
-    LoanDate DATE,
-    ReturnDate DATE,
-    DueDate DATE,
-    BookReturn CHAR(1),
-    LoanPrice INT
-);
-
 CREATE TABLE IF NOT EXISTS "User" (
     UserID SERIAL PRIMARY KEY,
     Email VARCHAR(255) UNIQUE NOT NULL,
@@ -70,6 +59,16 @@ CREATE TABLE IF NOT EXISTS Employee (
     CONSTRAINT fk_user FOREIGN KEY (EmployeeID) REFERENCES "User"(UserID)
 );
 
+CREATE TABLE IF NOT EXISTS BookLoans (
+    LoanID SERIAL PRIMARY KEY,
+    BookID INT REFERENCES Books(BookID),
+    MemberID INT REFERENCES Member(MemberID),
+    LoanDate DATE,
+    ReturnDate DATE,
+    DueDate DATE,
+    BookReturn CHAR(1),
+    LoanPrice INT
+);
 
 -- Members
 INSERT INTO Member (RegisterDate)
