@@ -1,18 +1,23 @@
--- Commands to be executed directly in PostgreSQL (these cannot be run from JDBC):
-
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
 -- Create the database (run this part directly in your PostgreSQL admin tool or psql)
 -- CREATE DATABASE lim;
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
 
+
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
 -- -- Create a user and grant privileges
 -- CREATE USER root WITH ENCRYPTED PASSWORD 'password';
 -- GRANT ALL PRIVILEGES ON DATABASE lim TO root;
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------
 -- SQL script content to be executed from Java JDBC:
-
-CREATE TABLE IF NOT EXISTS Member (
-    MemberID SERIAL PRIMARY KEY,
-    RegisterDate DATE
-);
-
 CREATE TABLE IF NOT EXISTS Author (
     AuthorID SERIAL PRIMARY KEY,
     AuthorName VARCHAR(255) NOT NULL UNIQUE
@@ -23,12 +28,6 @@ CREATE TABLE IF NOT EXISTS Genre (
     GenreName VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Employee (
-    EmployeeID SERIAL PRIMARY KEY,
-    Position VARCHAR(255),
-    Salary FLOAT
-);
-
 CREATE TABLE IF NOT EXISTS Books (
     BookID SERIAL PRIMARY KEY,
     Title VARCHAR(255) NOT NULL,
@@ -36,17 +35,6 @@ CREATE TABLE IF NOT EXISTS Books (
     GenreID INT REFERENCES Genre(GenreID),
     BookYear INT,
     Quantity INT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "User" (
-    UserID SERIAL PRIMARY KEY,
-    Name VARCHAR(255) NOT NULL,
-    Address VARCHAR(255),
-    Phone VARCHAR(20),
-    Email VARCHAR(255),
-    Password VARCHAR(255),
-    EmployeeID INT REFERENCES Employee(EmployeeID),
-    MemberID INT REFERENCES Member(MemberID)
 );
 
 CREATE TABLE IF NOT EXISTS BookLoans (
@@ -59,6 +47,29 @@ CREATE TABLE IF NOT EXISTS BookLoans (
     BookReturn CHAR(1),
     LoanPrice INT
 );
+
+CREATE TABLE IF NOT EXISTS "User" (
+    UserID SERIAL PRIMARY KEY,
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    Password VARCHAR(255) NOT NULL,
+    Name VARCHAR(255) NOT NULL,
+    Phone VARCHAR(50),
+    Address VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS Member (
+    MemberID INT PRIMARY KEY,
+    RegisterDate DATE DEFAULT CURRENT_DATE,
+    CONSTRAINT fk_user FOREIGN KEY (MemberID) REFERENCES "User"(UserID)
+);
+
+CREATE TABLE IF NOT EXISTS Employee (
+    EmployeeID INT PRIMARY KEY,
+    Position VARCHAR(100),
+    Salary DECIMAL(10, 2),
+    CONSTRAINT fk_user FOREIGN KEY (EmployeeID) REFERENCES "User"(UserID)
+);
+
 
 -- Members
 INSERT INTO Member (RegisterDate)

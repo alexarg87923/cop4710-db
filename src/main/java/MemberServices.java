@@ -7,6 +7,12 @@ import java.util.Scanner;
 
 public class MemberServices {
 
+	public enum BookListStatus {
+		SUCCESS, // No issues, may or may not have books
+		NO_BOOKS, // No books checked out
+		ERROR // Error occurred
+	}
+
     private Scanner input;
     private Connection conn;
     private BookService bookService;
@@ -60,21 +66,6 @@ public class MemberServices {
         } while (option != 5);
     }
 
-
-    private void listMemberBooks() {
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM BookLoans bl JOIN Books b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
-            stmt.setInt(1, loggedInMemberId);
-            ResultSet rs = stmt.executeQuery();
-            System.out.println("Books currently checked out:");
-            while (rs.next()) {
-                System.out.println("Loan ID: " + rs.getInt("LoanID") + ", Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title") + ", Due Date: " + rs.getDate("DueDate"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error listing member's books: " + e.getMessage());
-        }
-    }
-
 	private void listAllBooksPaginated(int page, int pageSize) {
         try {
             int offset = (page - 1) * pageSize;
@@ -90,29 +81,64 @@ public class MemberServices {
         }
     }
 
-    private void checkoutBook() {
-        System.out.println("Books currently checked out:");
-        listMemberBooks();
-
-        System.out.print("Enter Book ID to checkout: ");
-        int bookId = Integer.parseInt(input.nextLine());
-
-        LocalDate loanDate = LocalDate.now();
-        LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
-
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
-            stmt.setInt(1, bookId);
-            stmt.setInt(2, loggedInMemberId);
-            stmt.setDate(3, java.sql.Date.valueOf(loanDate));
-            stmt.setDate(4, java.sql.Date.valueOf(dueDate));
-            stmt.executeUpdate();
-            System.out.println("Book checked out successfully!");
-        } catch (SQLException e) {
-            System.out.println("Failed to checkout book: " + e.getMessage());
-        }
-    }
+	private BookListStatus listMemberBooks() {
+		try {
+			int rowCount = 0;
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT * FROM BookLoans bl JOIN Books b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
+			stmt.setInt(1, loggedInMemberId);
+			ResultSet rs = stmt.executeQuery();
+			System.out.println("Books currently checked out:");
+			
+			while (rs.next()) {
+				rowCount++;
+				System.out.println("Loan ID: " + rs.getInt("LoanID") + ", Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title") + ", Due Date: " + rs.getDate("DueDate"));
+			}
+			
+			if (rowCount == 0) {
+				System.out.println("You currently don't have any books checked out.");
+				return BookListStatus.NO_BOOKS;
+			}
+			return BookListStatus.SUCCESS;
+		} catch (SQLException e) {
+			System.out.println("Error listing member's books: " + e.getMessage());
+			return BookListStatus.ERROR;
+		}
+	}
+	
+	private void checkoutBook() {
+		BookListStatus result = listMemberBooks();
+		if (result == BookListStatus.ERROR) {
+			System.out.println("Unable to proceed due to an error.");
+			return;
+		} else if (result == BookListStatus.NO_BOOKS) {
+			System.out.println("No books to return.");
+			return;
+		}
+	
+		System.out.print("Enter Book ID to return: ");
+		int bookId = Integer.parseInt(input.nextLine());
+	
+		LocalDate returnDate = LocalDate.now();
+	
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+			stmt.setDate(1, java.sql.Date.valueOf(returnDate));
+			stmt.setInt(2, bookId);
+			stmt.setInt(3, loggedInMemberId);
+			int affectedRows = stmt.executeUpdate();
+			if (affectedRows > 0) {
+				System.out.println("Book returned successfully!");
+			} else {
+				System.out.println("No matching loan record found or the book is already returned.");
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to return book: " + e.getMessage());
+		}
+	}
+	
+	
 
     private void checkInBook() {
         System.out.print("Would you like to list all books? (yes/no): ");
@@ -125,25 +151,23 @@ public class MemberServices {
             listAllBooksPaginated(page, pageSize);
         }
 
-        System.out.print("Enter Book ID to check in: ");
-        int bookId = Integer.parseInt(input.nextLine());
-
-        LocalDate returnDate = LocalDate.now();
-
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
-            stmt.setDate(1, java.sql.Date.valueOf(returnDate));
-            stmt.setInt(2, bookId);
-            stmt.setInt(3, loggedInMemberId);
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("Book checked in successfully!");
-            } else {
-                System.out.println("No matching loan record found or the book is already returned.");
-            }
-        } catch (SQLException e) {
-            System.out.println("Failed to check in book: " + e.getMessage());
-        }
+		System.out.print("Enter Book ID to rent: ");
+		int bookId = Integer.parseInt(input.nextLine());
+	
+		LocalDate loanDate = LocalDate.now();
+		LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
+	
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
+			stmt.setInt(1, bookId);
+			stmt.setInt(2, loggedInMemberId);
+			stmt.setDate(3, java.sql.Date.valueOf(loanDate));
+			stmt.setDate(4, java.sql.Date.valueOf(dueDate));
+			stmt.executeUpdate();
+			System.out.println("Book rented successfully!");
+		} catch (SQLException e) {
+			System.out.println("Failed to rent book: " + e.getMessage());
+		}
     }
 }
