@@ -2,6 +2,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 public class BookService {
@@ -227,22 +228,85 @@ public class BookService {
         }
     }
 
-	public void extendLoanForMember() {
-        // Placeholder: Implement actual checkout logic
-        System.out.println("Checkout book for member (functionality not fully implemented yet).");
+
+    public void extendLoanForMember() {
+        System.out.print("Enter Member ID: ");
+        int memberId = Integer.parseInt(input.nextLine());
+        System.out.print("Enter Book ID to extend loan: ");
+        int bookId = Integer.parseInt(input.nextLine());
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "SELECT DueDate FROM BookLoans WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+            stmt.setInt(1, bookId);
+            stmt.setInt(2, memberId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                LocalDate currentDueDate = rs.getDate("DueDate").toLocalDate();
+                LocalDate newDueDate = currentDueDate.plusDays(14); // Extend loan by 14 days
+
+                PreparedStatement updateStmt = conn.prepareStatement(
+                    "UPDATE BookLoans SET DueDate = ? WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+                updateStmt.setDate(1, java.sql.Date.valueOf(newDueDate));
+                updateStmt.setInt(2, bookId);
+                updateStmt.setInt(3, memberId);
+                updateStmt.executeUpdate();
+                System.out.println("Loan extended successfully!");
+            } else {
+                System.out.println("No active loan found for the given Book ID and Member ID.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Failed to extend loan: " + e.getMessage());
+        }
     }
 
-
     public void checkoutBookForMember() {
-        // Placeholder: Implement actual checkout logic
-        System.out.println("Checkout book for member (functionality not fully implemented yet).");
+        System.out.print("Enter Member ID: ");
+        int memberId = Integer.parseInt(input.nextLine());
+        System.out.print("Enter Book ID to checkout: ");
+        int bookId = Integer.parseInt(input.nextLine());
+
+        LocalDate loanDate = LocalDate.now();
+        LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
+            stmt.setInt(1, bookId);
+            stmt.setInt(2, memberId);
+            stmt.setDate(3, java.sql.Date.valueOf(loanDate));
+            stmt.setDate(4, java.sql.Date.valueOf(dueDate));
+            stmt.executeUpdate();
+            System.out.println("Book checked out successfully!");
+        } catch (SQLException e) {
+            System.out.println("Failed to checkout book: " + e.getMessage());
+        }
     }
 
     public void checkInBookForMember() {
-        // Placeholder: Implement actual check-in logic
-        System.out.println("Check in book for member (functionality not fully implemented yet).");
-    }
+        System.out.print("Enter Member ID: ");
+        int memberId = Integer.parseInt(input.nextLine());
+        System.out.print("Enter Book ID to check in: ");
+        int bookId = Integer.parseInt(input.nextLine());
 
+        LocalDate returnDate = LocalDate.now();
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+            stmt.setDate(1, java.sql.Date.valueOf(returnDate));
+            stmt.setInt(2, bookId);
+            stmt.setInt(3, memberId);
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Book checked in successfully!");
+            } else {
+                System.out.println("No matching loan record found or the book is already returned.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Failed to check in book: " + e.getMessage());
+        }
+    }
     public void listBooks() {
         try {
             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books");

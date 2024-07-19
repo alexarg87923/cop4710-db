@@ -42,41 +42,44 @@ public class App {
         }
     }
 
-    public static void login(int userType, Scanner input) {
-        System.out.print("Email: ");
-        String email = input.nextLine();
-        System.out.print("Password: ");
-        String password = input.nextLine();
-        if (verifyLogin(email, password)) {
-            if (userType == 1) { // Employee
-                new EmployeeServices(input).showEmployeeHomeScreen();
-            } else { // Member
-                new MemberServices(input).showMemberHomeScreen();
-            }
-        } else {
-            System.out.println("Login failed. Please try again.");
-        }
-    }
+	public static void login(int userType, Scanner input) {
+		System.out.print("Email: ");
+		String email = input.nextLine();
+		System.out.print("Password: ");
+		String password = input.nextLine();
+		Integer userId = verifyLogin(email, password);
+		if (userId != null) {
+			if (userType == 1) { // Employee
+				new EmployeeServices(input).showEmployeeHomeScreen();
+			} else { // Member
+				new MemberServices(input, userId).showMemberHomeScreen();
+			}
+		} else {
+			System.out.println("Login failed. Please try again.");
+		}
+	}
+	
 
-	public static boolean verifyLogin(String email, String password) {
+	public static Integer verifyLogin(String email, String password) {
 		try (Connection conn = DatabaseUtil.connect()) {
 			PreparedStatement stmt = conn.prepareStatement(
-				"SELECT * FROM \"User\" WHERE Email = ? AND Password = ?"
+				"SELECT UserID FROM \"User\" WHERE Email = ? AND Password = ?"
 			);
 			stmt.setString(1, email);
 			stmt.setString(2, password);
 			ResultSet rs = stmt.executeQuery();
 			if (rs.next()) {
 				System.out.println("You have logged in successfully.");
-				return true;
+				return rs.getInt("UserID");
 			} else {
 				System.out.println("Invalid email or password.");
 			}
 		} catch (SQLException e) {
 			System.out.println("Login failed due to system error: " + e.getMessage());
 		}
-		return false;
-	}	
+		return null;
+	}
+	
 
     public static void signUp(Scanner input) {
         System.out.print("Email (required): ");
