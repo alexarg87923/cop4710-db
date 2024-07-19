@@ -115,42 +115,48 @@ public class EmployeeServices {
         } while (option != 19); // Exit condition corrected to match the logout option
     }
 
-    public void listMembers() {
-        System.out.println("Would you like to search members by name or list all members? (search/list)");
-        String choice = input.nextLine();
-
-        if ("search".equalsIgnoreCase(choice)) {
-            System.out.print("Enter member name or part of the name to search: ");
-            String name = input.nextLine();
-            searchMembers(name);
-        } else {
-            listAllMembers();
-        }
-    }
-
-    private void searchMembers(String name) {
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT MemberID, Name, Email FROM Member WHERE lower(Name) LIKE ?");
-            stmt.setString(1, "%" + name.toLowerCase() + "%");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name") + ", Email: " + rs.getString("Email"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error searching for members: " + e.getMessage());
-        }
-    }
-
-    private void listAllMembers() {
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT MemberID, Name, Email FROM Member");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name") + ", Email: " + rs.getString("Email"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error listing members: " + e.getMessage());
-        }
-    }
+	public void listMembers() {
+		System.out.println("Would you like to search members by name or list all members? (search/list)");
+		String choice = input.nextLine();
+	
+		if ("search".equalsIgnoreCase(choice)) {
+			System.out.print("Enter member name or part of the name to search: ");
+			String name = input.nextLine();
+			searchMembers(name);
+		} else {
+			listAllMembers();
+		}
+	}
+	
+	private void searchMembers(String name) {
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT m.MemberID, u.Name, u.Email " +
+				"FROM Member m " +
+				"JOIN \"User\" u ON m.MemberID = u.UserID " +
+				"WHERE lower(u.Name) LIKE ?");
+			stmt.setString(1, "%" + name.toLowerCase() + "%");
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name") + ", Email: " + rs.getString("Email"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Error searching for members: " + e.getMessage());
+		}
+	}
+	
+	private void listAllMembers() {
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT m.MemberID, u.Name, u.Email " +
+				"FROM Member m " +
+				"JOIN \"User\" u ON m.MemberID = u.UserID");
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name") + ", Email: " + rs.getString("Email"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Error listing members: " + e.getMessage());
+		}
+	}	
 }
