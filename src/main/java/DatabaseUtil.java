@@ -7,20 +7,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseUtil {
-    private static final String URL = "jdbc:postgresql://localhost:5432/lim";
-    private static final String USER = "root";
-    private static final String PASSWORD = "password";
+    private static final String URL = "jdbc:postgresql://149.28.106.167:5432/lim";
+    private static final String USER = "cop4710";
+    private static final String PASSWORD = "yMJ6zenikfum@3a";
 
     public static Connection connect() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 	
 	public static void initializeDatabase() {
-    String url = "jdbc:postgresql://localhost:5432/lim";
-    String user = "root";
-    String password = "password";
-
-    try (Connection conn = DriverManager.getConnection(url, user, password);
+    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
          Statement stmt = conn.createStatement()) {
 
         String sql = new String(Files.readAllBytes(Paths.get("init_database.sql")));

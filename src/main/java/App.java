@@ -7,7 +7,7 @@ import java.util.Scanner;
 public class App {
 
     public static void main(String[] args) {
-        DatabaseUtil.initializeDatabase();
+        // DatabaseUtil.initializeDatabase();
         Scanner input = new Scanner(System.in);
         System.out.println("Welcome to the Ultimate Library Group!");
         System.out.println("Are you an Employee or a Member?");
