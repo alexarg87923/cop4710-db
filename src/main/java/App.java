@@ -79,21 +79,27 @@ public class App {
 	}	
 
     public static void signUp(Scanner input) {
-        System.out.print("Email: ");
+        System.out.print("Email (required): ");
         String email = input.nextLine();
-        System.out.print("Password: ");
+        System.out.print("Password (required): ");
         String password = input.nextLine();
-        System.out.print("Name: ");
+        System.out.print("Name (required): ");
         String name = input.nextLine();
-        saveSignUp(email, password, name);
+		System.out.print("Phone # (press enter to skip): ");
+        String phone = input.nextLine();
+		System.out.print("Address (press enter to skip): ");
+        String address = input.nextLine();
+        saveSignUp(email, password, name, phone, address);
     }
 
-    public static void saveSignUp(String email, String password, String name) {
+    public static void saveSignUp(String email, String password, String name, String phone, String address) {
         try (Connection conn = DatabaseUtil.connect()) {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO \"User\" (email, password, name) VALUES (?, ?, ?)");
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO \"User\" (email, password, name, phone, address) VALUES (?, ?, ?, ?, ?)");
             stmt.setString(1, email);
             stmt.setString(2, password);
 			stmt.setString(3, name);
+			stmt.setString(4, phone);
+			stmt.setString(5, address);
             int affectedRows = stmt.executeUpdate();
             if (affectedRows > 0) {
                 System.out.println("You have successfully signed up.");
