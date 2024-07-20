@@ -72,23 +72,6 @@ public class MemberServices {
         } while (option != 5);
     }
 
-    private void listAllBooksPaginated(int page, int pageSize) {
-        try {
-            int offset = (page - 1) * pageSize;
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Books LIMIT ? OFFSET ?");
-            stmt.setInt(1, pageSize);
-            stmt.setInt(2, offset);
-            ResultSet rs = stmt.executeQuery();
-            System.out.println("\n=========== List of Books ===========");
-            while (rs.next()) {
-                System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Error listing books: " + e.getMessage());
-        }
-    }
-
-
     private BookListStatus listMemberBooks() {
         try {
             int rowCount = 0;
@@ -113,6 +96,7 @@ public class MemberServices {
             return BookListStatus.ERROR;
         }
     }
+
 	private void checkInBook() {
 		BookListStatus result = listMemberBooks();
 		if (result == BookListStatus.ERROR) {
@@ -164,35 +148,9 @@ public class MemberServices {
 			System.out.println("Operation cancelled.");
 			return;
 		}
-		if ("yes".equalsIgnoreCase(choice)) {
-			System.out.print("Enter page number (type 'cancel' to exit): ");
-			String pageNumber = input.nextLine();
-			if ("cancel".equalsIgnoreCase(pageNumber)) {
-				System.out.println("Operation cancelled.");
-				return;
-			}
-			int page;
-			try {
-				page = Integer.parseInt(pageNumber);
-			} catch (NumberFormatException e) {
-				System.out.println("Invalid input. Please enter a valid number.");
-				return;
-			}
 	
-			System.out.print("Enter page size (type 'cancel' to exit): ");
-			String pageSizeInput = input.nextLine();
-			if ("cancel".equalsIgnoreCase(pageSizeInput)) {
-				System.out.println("Operation cancelled.");
-				return;
-			}
-			int pageSize;
-			try {
-				pageSize = Integer.parseInt(pageSizeInput);
-			} catch (NumberFormatException e) {
-				System.out.println("Invalid input. Please enter a valid number.");
-				return;
-			}
-			listAllBooksPaginated(page, pageSize);
+		if ("yes".equalsIgnoreCase(choice)) {
+			listAllBooks();
 		}
 	
 		System.out.print("Enter Book ID to rent (type 'cancel' to exit): ");
@@ -223,6 +181,19 @@ public class MemberServices {
 			System.out.println("Book rented successfully!");
 		} catch (SQLException e) {
 			System.out.println("Failed to rent book: " + e.getMessage());
+		}
+	}
+	
+	private void listAllBooks() {
+		System.out.println("\n======== List of All Books ========");
+		try {
+			PreparedStatement stmt = conn.prepareStatement("SELECT BookID, Title FROM Books");
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to list books: " + e.getMessage());
 		}
 	}	
 }

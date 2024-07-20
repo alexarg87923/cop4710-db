@@ -417,9 +417,11 @@ public class BookService {
 	
 		if (memberInput.equalsIgnoreCase("list")) {
 			listMembers();
-			System.out.print("Enter Member ID: ");
+			System.out.print("Enter Member ID or type 'cancel' to exit: ");
 			memberInput = input.nextLine();
-		} else if (memberInput.equalsIgnoreCase("cancel")) {
+		} 
+	
+		if (memberInput.equalsIgnoreCase("cancel")) {
 			return;
 		}
 	
@@ -430,9 +432,11 @@ public class BookService {
 	
 			if (bookInput.equalsIgnoreCase("list")) {
 				listAvailableBooks();
-				System.out.print("Enter Book ID: ");
+				System.out.print("Enter Book ID or type 'cancel' to exit: ");
 				bookInput = input.nextLine();
-			} else if (bookInput.equalsIgnoreCase("cancel")) {
+			} 
+	
+			if (bookInput.equalsIgnoreCase("cancel")) {
 				return;
 			}
 	
@@ -455,7 +459,7 @@ public class BookService {
 		} catch (NumberFormatException e) {
 			System.out.println("Invalid input. Please enter valid numeric IDs.");
 		}
-	}
+	}	
 	
 	private void listAvailableBooks() {
 		System.out.println("\n======== List of Available Books ========");
@@ -477,14 +481,16 @@ public class BookService {
 
 	public void checkInBookForMember() {
 		System.out.println("\n======== Check-in Book for Member ========");
-		System.out.print("Enter Member ID or type 'list' to view all members (or 'cancel' to exit): ");
+		System.out.print("Enter Member ID or type 'list' to view all members with active loans (or 'cancel' to exit): ");
 		String memberInput = input.nextLine();
 	
 		if (memberInput.equalsIgnoreCase("list")) {
-			listMembers();
-			System.out.print("Enter Member ID: ");
+			listMembersWithActiveLoans();
+			System.out.print("Enter Member ID or type 'cancel' to exit: ");
 			memberInput = input.nextLine();
-		} else if (memberInput.equalsIgnoreCase("cancel")) {
+		} 
+	
+		if (memberInput.equalsIgnoreCase("cancel")) {
 			return;
 		}
 	
@@ -495,9 +501,11 @@ public class BookService {
 	
 			if (bookInput.equalsIgnoreCase("list")) {
 				listCheckedOutBooks(memberId);
-				System.out.print("Enter Book ID: ");
+				System.out.print("Enter Book ID or type 'cancel' to exit: ");
 				bookInput = input.nextLine();
-			} else if (bookInput.equalsIgnoreCase("cancel")) {
+			} 
+	
+			if (bookInput.equalsIgnoreCase("cancel")) {
 				return;
 			}
 	
@@ -523,6 +531,23 @@ public class BookService {
 			System.out.println("Invalid input. Please enter valid numeric IDs.");
 		}
 	}
+	
+	private void listMembersWithActiveLoans() {
+		System.out.println("\n======== List of Members with Active Loans ========");
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT DISTINCT u.MemberID, u.Name " +
+				"FROM \"User\" u " +
+				"JOIN BookLoans bl ON u.MemberID = bl.MemberID " +
+				"WHERE bl.BookReturn = 'N'");
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to list members with active loans: " + e.getMessage());
+		}
+	}
 
 	private void listMembers() {
 		System.out.println("\n======== List of Members ========");
@@ -540,7 +565,6 @@ public class BookService {
 			System.out.println("Failed to list members: " + e.getMessage());
 		}
 	}
-	
 
     public void listBooks() {
         try {

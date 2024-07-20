@@ -107,7 +107,7 @@ public class EmployeeServices {
         } while (option != 19); // Ensure loop exits correctly
     }
 
-    public void listMembers() {
+    private void listMembers() {
         System.out.println("Would you like to search members by name or list all members? (search/list)");
         String choice = input.nextLine();
     
