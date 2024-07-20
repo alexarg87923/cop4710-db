@@ -18,8 +18,8 @@ public class BookService {
         this.genreService = genreService;
     }
 
-    public void addBook() {
-        System.out.println("Enter the details of the book to add:");
+	public void addBook() {
+        System.out.println("\n======== Add a New Book ========");
         System.out.print("Title: ");
         String title = input.nextLine();
     
@@ -27,25 +27,30 @@ public class BookService {
         int genreId = handleGenre();
     
         System.out.print("Year of Publication: ");
-        int year = Integer.parseInt(input.nextLine());
-        System.out.print("Quantity: ");
-        int quantity = Integer.parseInt(input.nextLine());
-    
         try {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO books (title, authorid, genreid, bookyear, quantity) VALUES (?, ?, ?, ?, ?)");
-            stmt.setString(1, title);
-            stmt.setInt(2, authorId);
-            stmt.setInt(3, genreId);
-            stmt.setInt(4, year);
-            stmt.setInt(5, quantity);
-            stmt.executeUpdate();
-            System.out.println("Book added successfully!");
-        } catch (SQLException e) {
-            System.out.println("Failed to add book: " + e.getMessage());
+            int year = Integer.parseInt(input.nextLine());
+            System.out.print("Quantity: ");
+            int quantity = Integer.parseInt(input.nextLine());
+    
+            try {
+                PreparedStatement stmt = conn.prepareStatement("INSERT INTO books (title, authorid, genreid, bookyear, quantity) VALUES (?, ?, ?, ?, ?)");
+                stmt.setString(1, title);
+                stmt.setInt(2, authorId);
+                stmt.setInt(3, genreId);
+                stmt.setInt(4, year);
+                stmt.setInt(5, quantity);
+                stmt.executeUpdate();
+                System.out.println("Book added successfully!");
+            } catch (SQLException e) {
+                System.out.println("Failed to add book: " + e.getMessage());
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input for year or quantity. Please enter valid numbers.");
         }
     }
     
     public void removeBook() {
+        System.out.println("\n======== Remove a Book ========");
         System.out.println("Would you like to list all books or search by title? (list/search)");
         String choice = input.nextLine();
         
@@ -67,82 +72,88 @@ public class BookService {
         
         try {
             int bookId = Integer.parseInt(inputStr);
-            PreparedStatement stmt = conn.prepareStatement("DELETE FROM books WHERE bookid = ?");
-            stmt.setInt(1, bookId);
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("Book removed successfully!");
-            } else {
-                System.out.println("No book found with the specified ID.");
+            try {
+                PreparedStatement stmt = conn.prepareStatement("DELETE FROM books WHERE bookid = ?");
+                stmt.setInt(1, bookId);
+                int affectedRows = stmt.executeUpdate();
+                if (affectedRows > 0) {
+                    System.out.println("Book removed successfully!");
+                } else {
+                    System.out.println("No book found with the specified ID.");
+                }
+            } catch (SQLException e) {
+                System.out.println("Error removing book: " + e.getMessage());
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input, operation cancelled.");
-        } catch (SQLException e) {
-            System.out.println("Error removing book: " + e.getMessage());
         }
     }
     
     public void editBookEntry() {
+        System.out.println("\n======== Edit a Book Entry ========");
         System.out.print("Enter Book ID to edit: ");
-        int bookId = Integer.parseInt(input.nextLine());
-        
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books WHERE bookid = ?");
-            stmt.setInt(1, bookId);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                System.out.println("Editing book: " + rs.getString("title"));
+            int bookId = Integer.parseInt(input.nextLine());
+            try {
+                PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books WHERE bookid = ?");
+                stmt.setInt(1, bookId);
+                ResultSet rs = stmt.executeQuery();
                 
-                System.out.print("New Title (leave blank to keep current): ");
-                String title = input.nextLine();
-                if (title.isEmpty()) {
-                    title = rs.getString("title");
-                }
+                if (rs.next()) {
+                    System.out.println("Editing book: " + rs.getString("title"));
+                    
+                    System.out.print("New Title (leave blank to keep current): ");
+                    String title = input.nextLine();
+                    if (title.isEmpty()) {
+                        title = rs.getString("title");
+                    }
 
-                int authorId = handleAuthor();
-                if (authorId == -1) {
-                    authorId = rs.getInt("authorid");
-                }
+                    int authorId = handleAuthor();
+                    if (authorId == -1) {
+                        authorId = rs.getInt("authorid");
+                    }
 
-                int genreId = handleGenre();
-                if (genreId == -1) {
-                    genreId = rs.getInt("genreid");
-                }
+                    int genreId = handleGenre();
+                    if (genreId == -1) {
+                        genreId = rs.getInt("genreid");
+                    }
 
-                System.out.print("New Year of Publication (leave blank to keep current): ");
-                String yearStr = input.nextLine();
-                int year;
-                if (yearStr.isEmpty()) {
-                    year = rs.getInt("bookyear");
+                    System.out.print("New Year of Publication (leave blank to keep current): ");
+                    String yearStr = input.nextLine();
+                    int year;
+                    if (yearStr.isEmpty()) {
+                        year = rs.getInt("bookyear");
+                    } else {
+                        year = Integer.parseInt(yearStr);
+                    }
+
+                    System.out.print("New Quantity (leave blank to keep current): ");
+                    String quantityStr = input.nextLine();
+                    int quantity;
+                    if (quantityStr.isEmpty()) {
+                        quantity = rs.getInt("quantity");
+                    } else {
+                        quantity = Integer.parseInt(quantityStr);
+                    }
+
+                    PreparedStatement updateStmt = conn.prepareStatement("UPDATE books SET title = ?, authorid = ?, genreid = ?, bookyear = ?, quantity = ? WHERE bookid = ?");
+                    updateStmt.setString(1, title);
+                    updateStmt.setInt(2, authorId);
+                    updateStmt.setInt(3, genreId);
+                    updateStmt.setInt(4, year);
+                    updateStmt.setInt(5, quantity);
+                    updateStmt.setInt(6, bookId);
+                    updateStmt.executeUpdate();
+                    
+                    System.out.println("Book updated successfully!");
                 } else {
-                    year = Integer.parseInt(yearStr);
+                    System.out.println("No book found with the specified ID.");
                 }
-
-                System.out.print("New Quantity (leave blank to keep current): ");
-                String quantityStr = input.nextLine();
-                int quantity;
-                if (quantityStr.isEmpty()) {
-                    quantity = rs.getInt("quantity");
-                } else {
-                    quantity = Integer.parseInt(quantityStr);
-                }
-
-                PreparedStatement updateStmt = conn.prepareStatement("UPDATE books SET title = ?, authorid = ?, genreid = ?, bookyear = ?, quantity = ? WHERE bookid = ?");
-                updateStmt.setString(1, title);
-                updateStmt.setInt(2, authorId);
-                updateStmt.setInt(3, genreId);
-                updateStmt.setInt(4, year);
-                updateStmt.setInt(5, quantity);
-                updateStmt.setInt(6, bookId);
-                updateStmt.executeUpdate();
-                
-                System.out.println("Book updated successfully!");
-            } else {
-                System.out.println("No book found with the specified ID.");
+            } catch (SQLException e) {
+                System.out.println("Error updating book: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("Error updating book: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a valid book ID.");
         }
     }
 
@@ -153,7 +164,12 @@ public class BookService {
         if ("list".equalsIgnoreCase(inputStr)) {
             authorService.listAuthors();
             System.out.print("Enter Author ID: ");
-            return Integer.parseInt(input.nextLine());
+            try {
+                return Integer.parseInt(input.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid author ID.");
+                return -1;
+            }
         } else {
             try {
                 int authorId = Integer.parseInt(inputStr);
@@ -194,7 +210,12 @@ public class BookService {
         if ("list".equalsIgnoreCase(inputStr)) {
             genreService.listGenres();
             System.out.print("Enter Genre ID: ");
-            return Integer.parseInt(input.nextLine());
+            try {
+                return Integer.parseInt(input.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid genre ID.");
+                return -1;
+            }
         } else {
             try {
                 int genreId = Integer.parseInt(inputStr);
@@ -228,87 +249,103 @@ public class BookService {
         }
     }
 
-
     public void extendLoanForMember() {
+		System.out.println("\n======== Extend Book Loan for Member ========");
         System.out.print("Enter Member ID: ");
-        int memberId = Integer.parseInt(input.nextLine());
-        System.out.print("Enter Book ID to extend loan: ");
-        int bookId = Integer.parseInt(input.nextLine());
-
         try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT DueDate FROM BookLoans WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
-            stmt.setInt(1, bookId);
-            stmt.setInt(2, memberId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                LocalDate currentDueDate = rs.getDate("DueDate").toLocalDate();
-                LocalDate newDueDate = currentDueDate.plusDays(14); // Extend loan by 14 days
+            int memberId = Integer.parseInt(input.nextLine());
+            System.out.print("Enter Book ID to extend loan: ");
+            int bookId = Integer.parseInt(input.nextLine());
 
-                PreparedStatement updateStmt = conn.prepareStatement(
-                    "UPDATE BookLoans SET DueDate = ? WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
-                updateStmt.setDate(1, java.sql.Date.valueOf(newDueDate));
-                updateStmt.setInt(2, bookId);
-                updateStmt.setInt(3, memberId);
-                updateStmt.executeUpdate();
-                System.out.println("Loan extended successfully!");
-            } else {
-                System.out.println("No active loan found for the given Book ID and Member ID.");
+            try {
+                PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT DueDate FROM BookLoans WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+                stmt.setInt(1, bookId);
+                stmt.setInt(2, memberId);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    LocalDate currentDueDate = rs.getDate("DueDate").toLocalDate();
+                    LocalDate newDueDate = currentDueDate.plusDays(14); // Extend loan by 14 days
+
+                    PreparedStatement updateStmt = conn.prepareStatement(
+                        "UPDATE BookLoans SET DueDate = ? WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+                    updateStmt.setDate(1, java.sql.Date.valueOf(newDueDate));
+                    updateStmt.setInt(2, bookId);
+                    updateStmt.setInt(3, memberId);
+                    updateStmt.executeUpdate();
+                    System.out.println("Loan extended successfully!");
+                } else {
+                    System.out.println("No active loan found for the given Book ID and Member ID.");
+                }
+            } catch (SQLException e) {
+                System.out.println("Failed to extend loan: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("Failed to extend loan: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter valid numeric IDs.");
         }
     }
 
     public void checkoutBookForMember() {
+		System.out.println("\n======== Check-out Book for Member ========");
         System.out.print("Enter Member ID: ");
-        int memberId = Integer.parseInt(input.nextLine());
-        System.out.print("Enter Book ID to checkout: ");
-        int bookId = Integer.parseInt(input.nextLine());
-
-        LocalDate loanDate = LocalDate.now();
-        LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
-
         try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
-            stmt.setInt(1, bookId);
-            stmt.setInt(2, memberId);
-            stmt.setDate(3, java.sql.Date.valueOf(loanDate));
-            stmt.setDate(4, java.sql.Date.valueOf(dueDate));
-            stmt.executeUpdate();
-            System.out.println("Book checked out successfully!");
-        } catch (SQLException e) {
-            System.out.println("Failed to checkout book: " + e.getMessage());
+            int memberId = Integer.parseInt(input.nextLine());
+            System.out.print("Enter Book ID to checkout: ");
+            int bookId = Integer.parseInt(input.nextLine());
+
+            LocalDate loanDate = LocalDate.now();
+            LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
+
+            try {
+                PreparedStatement stmt = conn.prepareStatement(
+                    "INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
+                stmt.setInt(1, bookId);
+                stmt.setInt(2, memberId);
+                stmt.setDate(3, java.sql.Date.valueOf(loanDate));
+                stmt.setDate(4, java.sql.Date.valueOf(dueDate));
+                stmt.executeUpdate();
+                System.out.println("Book checked out successfully!");
+            } catch (SQLException e) {
+                System.out.println("Failed to checkout book: " + e.getMessage());
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter valid numeric IDs.");
         }
     }
 
     public void checkInBookForMember() {
+		System.out.println("\n======== Check-in Book for Member ========");
         System.out.print("Enter Member ID: ");
-        int memberId = Integer.parseInt(input.nextLine());
-        System.out.print("Enter Book ID to check in: ");
-        int bookId = Integer.parseInt(input.nextLine());
-
-        LocalDate returnDate = LocalDate.now();
-
         try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
-            stmt.setDate(1, java.sql.Date.valueOf(returnDate));
-            stmt.setInt(2, bookId);
-            stmt.setInt(3, memberId);
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("Book checked in successfully!");
-            } else {
-                System.out.println("No matching loan record found or the book is already returned.");
+            int memberId = Integer.parseInt(input.nextLine());
+            System.out.print("Enter Book ID to check in: ");
+            int bookId = Integer.parseInt(input.nextLine());
+
+            LocalDate returnDate = LocalDate.now();
+
+            try {
+                PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+                stmt.setDate(1, java.sql.Date.valueOf(returnDate));
+                stmt.setInt(2, bookId);
+                stmt.setInt(3, memberId);
+                int affectedRows = stmt.executeUpdate();
+                if (affectedRows > 0) {
+                    System.out.println("Book checked in successfully!");
+                } else {
+                    System.out.println("No matching loan record found or the book is already returned.");
+                }
+            } catch (SQLException e) {
+                System.out.println("Failed to check in book: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("Failed to check in book: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter valid numeric IDs.");
         }
     }
+
     public void listBooks() {
         try {
+			System.out.println("\n======== List Books ========");
             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books");
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -320,6 +357,7 @@ public class BookService {
     }
 
     public void searchBooks(String partOfTitle) {
+		System.out.println("\n======== Search a Book Entry ========");
         try {
             PreparedStatement stmt = conn.prepareStatement("SELECT bookid, title FROM books WHERE lower(title) LIKE ?");
             stmt.setString(1, "%" + partOfTitle.toLowerCase() + "%");
@@ -342,6 +380,7 @@ public class BookService {
     }
 
     public void findBook() {
+		System.out.println("\n======== Find a Book Entry ========");
         System.out.print("Enter title or part of title to search: ");
         String title = input.nextLine();
         try {

@@ -14,6 +14,7 @@ public class AuthorService {
     }
 
     public void addAuthor() {
+        System.out.println("=====================================");
         System.out.print("Enter Author Name: ");
         String authorName = input.nextLine();
         try {
@@ -24,26 +25,34 @@ public class AuthorService {
         } catch (SQLException e) {
             System.out.println("Failed to add author: " + e.getMessage());
         }
+        System.out.println("=====================================");
     }
 
     public void removeAuthor() {
+        System.out.println("=====================================");
         System.out.print("Enter Author ID to remove: ");
-        int authorId = Integer.parseInt(input.nextLine());
         try {
-            PreparedStatement stmt = conn.prepareStatement("DELETE FROM Author WHERE AuthorID = ?");
-            stmt.setInt(1, authorId);
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("Author removed successfully!");
-            } else {
-                System.out.println("No author found with the specified ID.");
+            int authorId = Integer.parseInt(input.nextLine());
+            try {
+                PreparedStatement stmt = conn.prepareStatement("DELETE FROM Author WHERE AuthorID = ?");
+                stmt.setInt(1, authorId);
+                int affectedRows = stmt.executeUpdate();
+                if (affectedRows > 0) {
+                    System.out.println("Author removed successfully!");
+                } else {
+                    System.out.println("No author found with the specified ID.");
+                }
+            } catch (SQLException e) {
+                System.out.println("Error removing author: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("Error removing author: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a valid author ID.");
         }
+        System.out.println("=====================================");
     }
 
     public void listAuthors() {
+        System.out.println("=====================================");
         try {
             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Author");
             ResultSet rs = stmt.executeQuery();
@@ -53,26 +62,33 @@ public class AuthorService {
         } catch (SQLException e) {
             System.out.println("Error listing authors: " + e.getMessage());
         }
+        System.out.println("=====================================");
     }
 
     public void editAuthor() {
+        System.out.println("=====================================");
         System.out.print("Enter Author ID to edit: ");
-        int authorId = Integer.parseInt(input.nextLine());
-        System.out.print("Enter new Author Name: ");
-        String newAuthorName = input.nextLine();
-
         try {
-            PreparedStatement stmt = conn.prepareStatement("UPDATE Author SET AuthorName = ? WHERE AuthorID = ?");
-            stmt.setString(1, newAuthorName);
-            stmt.setInt(2, authorId);
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("Author updated successfully!");
-            } else {
-                System.out.println("No author found with the specified ID.");
+            int authorId = Integer.parseInt(input.nextLine());
+            System.out.print("Enter new Author Name: ");
+            String newAuthorName = input.nextLine();
+
+            try {
+                PreparedStatement stmt = conn.prepareStatement("UPDATE Author SET AuthorName = ? WHERE AuthorID = ?");
+                stmt.setString(1, newAuthorName);
+                stmt.setInt(2, authorId);
+                int affectedRows = stmt.executeUpdate();
+                if (affectedRows > 0) {
+                    System.out.println("Author updated successfully!");
+                } else {
+                    System.out.println("No author found with the specified ID.");
+                }
+            } catch (SQLException e) {
+                System.out.println("Error updating author: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("Error updating author: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter a valid author ID.");
         }
+        System.out.println("=====================================");
     }
 }

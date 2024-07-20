@@ -34,21 +34,27 @@ public class MemberServices {
     public void showMemberHomeScreen() {
         int option;
         do {
-            System.out.println("Member Home Screen:");
+            System.out.println("\n================ Member Home Screen ================");
             System.out.println("1. Search Books");
             System.out.println("2. List Books");
             System.out.println("3. Checkout Book");
             System.out.println("4. Check In Book");
             System.out.println("5. Log Out");
             System.out.print("Select an option: ");
-            option = Integer.parseInt(input.nextLine());
+            try {
+                option = Integer.parseInt(input.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a valid number.");
+				option = -1;
+                continue;
+            }
 
             switch (option) {
                 case 1:
-					bookService.findBook();
+                    bookService.findBook();
                     break;
                 case 2:
-					bookService.listBooks();
+                    bookService.listBooks();
                     break;
                 case 3:
                     checkoutBook();
@@ -66,13 +72,14 @@ public class MemberServices {
         } while (option != 5);
     }
 
-	private void listAllBooksPaginated(int page, int pageSize) {
+    private void listAllBooksPaginated(int page, int pageSize) {
         try {
             int offset = (page - 1) * pageSize;
             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM Books LIMIT ? OFFSET ?");
             stmt.setInt(1, pageSize);
             stmt.setInt(2, offset);
             ResultSet rs = stmt.executeQuery();
+            System.out.println("\n=========== List of Books ===========");
             while (rs.next()) {
                 System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
             }
@@ -81,31 +88,31 @@ public class MemberServices {
         }
     }
 
-	private BookListStatus listMemberBooks() {
-		try {
-			int rowCount = 0;
-			PreparedStatement stmt = conn.prepareStatement(
-				"SELECT * FROM BookLoans bl JOIN Books b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
-			stmt.setInt(1, loggedInMemberId);
-			ResultSet rs = stmt.executeQuery();
-			System.out.println("Books currently checked out:");
-			
-			while (rs.next()) {
-				rowCount++;
-				System.out.println("Loan ID: " + rs.getInt("LoanID") + ", Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title") + ", Due Date: " + rs.getDate("DueDate"));
-			}
-			
-			if (rowCount == 0) {
-				System.out.println("You currently don't have any books checked out.");
-				return BookListStatus.NO_BOOKS;
-			}
-			return BookListStatus.SUCCESS;
-		} catch (SQLException e) {
-			System.out.println("Error listing member's books: " + e.getMessage());
-			return BookListStatus.ERROR;
-		}
-	}
-	
+
+    private BookListStatus listMemberBooks() {
+        try {
+            int rowCount = 0;
+            PreparedStatement stmt = conn.prepareStatement(
+                "SELECT * FROM BookLoans bl JOIN Books b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
+            stmt.setInt(1, loggedInMemberId);
+            ResultSet rs = stmt.executeQuery();
+            System.out.println("\n========== Books Currently Checked Out ==========");
+            
+            while (rs.next()) {
+                rowCount++;
+                System.out.println("Loan ID: " + rs.getInt("LoanID") + ", Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title") + ", Due Date: " + rs.getDate("DueDate"));
+            }
+            
+            if (rowCount == 0) {
+                System.out.println("You currently don't have any books checked out.");
+                return BookListStatus.NO_BOOKS;
+            }
+            return BookListStatus.SUCCESS;
+        } catch (SQLException e) {
+            System.out.println("Error listing member's books: " + e.getMessage());
+            return BookListStatus.ERROR;
+        }
+    }
 	private void checkoutBook() {
 		BookListStatus result = listMemberBooks();
 		if (result == BookListStatus.ERROR) {
@@ -116,8 +123,20 @@ public class MemberServices {
 			return;
 		}
 	
-		System.out.print("Enter Book ID to return: ");
-		int bookId = Integer.parseInt(input.nextLine());
+		System.out.print("Enter Book ID to return (type 'cancel' to exit): ");
+		String inputLine = input.nextLine();
+		if ("cancel".equalsIgnoreCase(inputLine)) {
+			System.out.println("Operation cancelled.");
+			return;
+		}
+	
+		int bookId;
+		try {
+			bookId = Integer.parseInt(inputLine);
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid book ID.");
+			return;
+		}
 	
 		LocalDate returnDate = LocalDate.now();
 	
@@ -138,21 +157,57 @@ public class MemberServices {
 		}
 	}
 	
+	private void checkInBook() {
+		System.out.print("Would you like to list all books? (yes/no/cancel): ");
+		String choice = input.nextLine();
+		if ("cancel".equalsIgnoreCase(choice)) {
+			System.out.println("Operation cancelled.");
+			return;
+		}
+		if ("yes".equalsIgnoreCase(choice)) {
+			System.out.print("Enter page number (type 'cancel' to exit): ");
+			String pageNumber = input.nextLine();
+			if ("cancel".equalsIgnoreCase(pageNumber)) {
+				System.out.println("Operation cancelled.");
+				return;
+			}
+			int page;
+			try {
+				page = Integer.parseInt(pageNumber);
+			} catch (NumberFormatException e) {
+				System.out.println("Invalid input. Please enter a valid number.");
+				return;
+			}
 	
-
-    private void checkInBook() {
-        System.out.print("Would you like to list all books? (yes/no): ");
-        String choice = input.nextLine();
-        if ("yes".equalsIgnoreCase(choice)) {
-            System.out.print("Enter page number: ");
-            int page = Integer.parseInt(input.nextLine());
-            System.out.print("Enter page size: ");
-            int pageSize = Integer.parseInt(input.nextLine());
-            listAllBooksPaginated(page, pageSize);
-        }
-
-		System.out.print("Enter Book ID to rent: ");
-		int bookId = Integer.parseInt(input.nextLine());
+			System.out.print("Enter page size (type 'cancel' to exit): ");
+			String pageSizeInput = input.nextLine();
+			if ("cancel".equalsIgnoreCase(pageSizeInput)) {
+				System.out.println("Operation cancelled.");
+				return;
+			}
+			int pageSize;
+			try {
+				pageSize = Integer.parseInt(pageSizeInput);
+			} catch (NumberFormatException e) {
+				System.out.println("Invalid input. Please enter a valid number.");
+				return;
+			}
+			listAllBooksPaginated(page, pageSize);
+		}
+	
+		System.out.print("Enter Book ID to rent (type 'cancel' to exit): ");
+		String bookIdInput = input.nextLine();
+		if ("cancel".equalsIgnoreCase(bookIdInput)) {
+			System.out.println("Operation cancelled.");
+			return;
+		}
+		int bookId;
+		try {
+			bookId = Integer.parseInt(bookIdInput);
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid book ID.");
+			return;
+		}
 	
 		LocalDate loanDate = LocalDate.now();
 		LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
@@ -169,5 +224,5 @@ public class MemberServices {
 		} catch (SQLException e) {
 			System.out.println("Failed to rent book: " + e.getMessage());
 		}
-    }
+	}	
 }
