@@ -19,35 +19,61 @@ public class BookService {
     }
 
 	public void addBook() {
-        System.out.println("\n======== Add a New Book ========");
-        System.out.print("Title: ");
-        String title = input.nextLine();
-    
-        int authorId = handleAuthor();
-        int genreId = handleGenre();
-    
-        System.out.print("Year of Publication: ");
-        try {
-            int year = Integer.parseInt(input.nextLine());
-            System.out.print("Quantity: ");
-            int quantity = Integer.parseInt(input.nextLine());
-    
-            try {
-                PreparedStatement stmt = conn.prepareStatement("INSERT INTO books (title, authorid, genreid, bookyear, quantity) VALUES (?, ?, ?, ?, ?)");
-                stmt.setString(1, title);
-                stmt.setInt(2, authorId);
-                stmt.setInt(3, genreId);
-                stmt.setInt(4, year);
-                stmt.setInt(5, quantity);
-                stmt.executeUpdate();
-                System.out.println("Book added successfully!");
-            } catch (SQLException e) {
-                System.out.println("Failed to add book: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input for year or quantity. Please enter valid numbers.");
-        }
-    }
+		System.out.println("\n======== Add a New Book ========");
+		System.out.print("Title (or 'cancel' to exit): ");
+		String title = input.nextLine();
+	
+		if (title.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		int authorId = handleNewAuthor();
+		if (authorId == -1) {
+			System.out.println("Cancelled or failed to get a valid author ID.");
+			return;
+		}
+	
+		int genreId = handleNewGenre();
+		if (genreId == -1) {
+			System.out.println("Cancelled or failed to get a valid genre ID.");
+			return;
+		}
+	
+		System.out.print("Year of Publication (or 'cancel' to exit): ");
+		String yearStr = input.nextLine();
+		if (yearStr.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int year = Integer.parseInt(yearStr);
+			System.out.print("Quantity (or 'cancel' to exit): ");
+			String quantityStr = input.nextLine();
+			if (quantityStr.equalsIgnoreCase("cancel")) {
+				return;
+			}
+	
+			try {
+				int quantity = Integer.parseInt(quantityStr);
+				try {
+					PreparedStatement stmt = conn.prepareStatement("INSERT INTO books (title, authorid, genreid, bookyear, quantity) VALUES (?, ?, ?, ?, ?)");
+					stmt.setString(1, title);
+					stmt.setInt(2, authorId);
+					stmt.setInt(3, genreId);
+					stmt.setInt(4, year);
+					stmt.setInt(5, quantity);
+					stmt.executeUpdate();
+					System.out.println("Book added successfully!");
+				} catch (SQLException e) {
+					System.out.println("Failed to add book: " + e.getMessage());
+				}
+			} catch (NumberFormatException e) {
+				System.out.println("Invalid input for quantity. Please enter a valid number.");
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input for year. Please enter a valid number.");
+		}
+	}	
     
     public void removeBook() {
         System.out.println("\n======== Remove a Book ========");
@@ -89,165 +115,203 @@ public class BookService {
         }
     }
     
-    public void editBookEntry() {
-        System.out.println("\n======== Edit a Book Entry ========");
-        System.out.print("Enter Book ID to edit: ");
-        try {
-            int bookId = Integer.parseInt(input.nextLine());
-            try {
-                PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books WHERE bookid = ?");
-                stmt.setInt(1, bookId);
-                ResultSet rs = stmt.executeQuery();
-                
-                if (rs.next()) {
-                    System.out.println("Editing book: " + rs.getString("title"));
-                    
-                    System.out.print("New Title (leave blank to keep current): ");
-                    String title = input.nextLine();
-                    if (title.isEmpty()) {
-                        title = rs.getString("title");
-                    }
-
-                    int authorId = handleAuthor();
-                    if (authorId == -1) {
-                        authorId = rs.getInt("authorid");
-                    }
-
-                    int genreId = handleGenre();
-                    if (genreId == -1) {
-                        genreId = rs.getInt("genreid");
-                    }
-
-                    System.out.print("New Year of Publication (leave blank to keep current): ");
-                    String yearStr = input.nextLine();
-                    int year;
-                    if (yearStr.isEmpty()) {
-                        year = rs.getInt("bookyear");
-                    } else {
-                        year = Integer.parseInt(yearStr);
-                    }
-
-                    System.out.print("New Quantity (leave blank to keep current): ");
-                    String quantityStr = input.nextLine();
-                    int quantity;
-                    if (quantityStr.isEmpty()) {
-                        quantity = rs.getInt("quantity");
-                    } else {
-                        quantity = Integer.parseInt(quantityStr);
-                    }
-
-                    PreparedStatement updateStmt = conn.prepareStatement("UPDATE books SET title = ?, authorid = ?, genreid = ?, bookyear = ?, quantity = ? WHERE bookid = ?");
-                    updateStmt.setString(1, title);
-                    updateStmt.setInt(2, authorId);
-                    updateStmt.setInt(3, genreId);
-                    updateStmt.setInt(4, year);
-                    updateStmt.setInt(5, quantity);
-                    updateStmt.setInt(6, bookId);
-                    updateStmt.executeUpdate();
-                    
-                    System.out.println("Book updated successfully!");
-                } else {
-                    System.out.println("No book found with the specified ID.");
-                }
-            } catch (SQLException e) {
-                System.out.println("Error updating book: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter a valid book ID.");
-        }
-    }
-
-    private int handleAuthor() {
-        System.out.println("Enter Author Name or ID (type 'list' to see all authors): ");
-        String inputStr = input.nextLine();
-    
-        if ("list".equalsIgnoreCase(inputStr)) {
-            authorService.listAuthors();
-            System.out.print("Enter Author ID: ");
-            try {
-                return Integer.parseInt(input.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a valid author ID.");
-                return -1;
-            }
-        } else {
-            try {
-                int authorId = Integer.parseInt(inputStr);
-                return authorId;
-            } catch (NumberFormatException e) {
-                // Assuming input was a name and not a number
-                try {
-                    PreparedStatement stmt = conn.prepareStatement("SELECT AuthorID FROM Author WHERE AuthorName = ?");
-                    stmt.setString(1, inputStr);
-                    ResultSet rs = stmt.executeQuery();
-                    if (rs.next()) {
-                        return rs.getInt("AuthorID");
-                    } else {
-                        System.out.println("Author not found. Do you want to make this new entry? (yes/no)");
-                        String decision = input.nextLine();
-                        if ("yes".equalsIgnoreCase(decision)) {
-                            PreparedStatement insertStmt = conn.prepareStatement("INSERT INTO Author (AuthorName) VALUES (?) RETURNING AuthorID");
-                            insertStmt.setString(1, inputStr);
-                            ResultSet insertRs = insertStmt.executeQuery();
-                            if (insertRs.next()) {
-                                return insertRs.getInt("AuthorID");
-                            }
-                        }
-                        throw new SQLException("Author creation was cancelled or failed.");
-                    }
-                } catch (SQLException ex) {
-                    System.out.println("Database error: " + ex.getMessage());
-                    return -1; // Indicate failure
-                }
-            }
-        }
-    }
-
-    private int handleGenre() {
-        System.out.println("Enter Genre Name or ID (type 'list' to see all genres): ");
-        String inputStr = input.nextLine();
-    
-        if ("list".equalsIgnoreCase(inputStr)) {
-            genreService.listGenres();
-            System.out.print("Enter Genre ID: ");
-            try {
-                return Integer.parseInt(input.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a valid genre ID.");
-                return -1;
-            }
-        } else {
-            try {
-                int genreId = Integer.parseInt(inputStr);
-                return genreId;
-            } catch (NumberFormatException e) {
-                // Assuming input was a name and not a number
-                try {
-                    PreparedStatement stmt = conn.prepareStatement("SELECT GenreID FROM Genre WHERE GenreName = ?");
-                    stmt.setString(1, inputStr);
-                    ResultSet rs = stmt.executeQuery();
-                    if (rs.next()) {
-                        return rs.getInt("GenreID");
-                    } else {
-                        System.out.println("Genre not found. Do you want to make this new entry? (yes/no)");
-                        String decision = input.nextLine();
-                        if ("yes".equalsIgnoreCase(decision)) {
-                            PreparedStatement insertStmt = conn.prepareStatement("INSERT INTO Genre (GenreName) VALUES (?) RETURNING GenreID");
-                            insertStmt.setString(1, inputStr);
-                            ResultSet insertRs = insertStmt.executeQuery();
-                            if (insertRs.next()) {
-                                return insertRs.getInt("GenreID");
-                            }
-                        }
-                        throw new SQLException("Genre creation was cancelled or failed.");
-                    }
-                } catch (SQLException ex) {
-                    System.out.println("Database error: " + ex.getMessage());
-                    return -1; // Indicate failure
-                }
-            }
-        }
-    }
+	public void editBookEntry() {
+		System.out.println("\n======== Edit a Book Entry ========");
+		System.out.print("Enter Book ID to edit or type 'list' to view all books (or 'cancel' to exit): ");
+		String bookInput = input.nextLine();
+	
+		if (bookInput.equalsIgnoreCase("list")) {
+			listBooks();
+			System.out.print("Enter Book ID to edit: ");
+			bookInput = input.nextLine();
+		} else if (bookInput.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int bookId = Integer.parseInt(bookInput);
+			try {
+				PreparedStatement stmt = conn.prepareStatement("SELECT * FROM books WHERE bookid = ?");
+				stmt.setInt(1, bookId);
+				ResultSet rs = stmt.executeQuery();
+	
+				if (rs.next()) {
+					System.out.println("Editing book: " + rs.getString("title"));
+	
+					System.out.print("New Title (leave blank to keep current): ");
+					String title = input.nextLine();
+					if (title.isEmpty()) {
+						title = rs.getString("title");
+					}
+	
+					int authorId = handleExistingAuthor(rs.getInt("authorid"));
+					if (authorId == -1) {
+						authorId = rs.getInt("authorid");
+					}
+	
+					int genreId = handleExistingGenre(rs.getInt("genreid"));
+					if (genreId == -1) {
+						genreId = rs.getInt("genreid");
+					}
+	
+					System.out.print("New Year of Publication (leave blank to keep current): ");
+					String yearStr = input.nextLine();
+					int year;
+					if (yearStr.isEmpty()) {
+						year = rs.getInt("bookyear");
+					} else {
+						year = Integer.parseInt(yearStr);
+					}
+	
+					System.out.print("New Quantity (leave blank to keep current): ");
+					String quantityStr = input.nextLine();
+					int quantity;
+					if (quantityStr.isEmpty()) {
+						quantity = rs.getInt("quantity");
+					} else {
+						quantity = Integer.parseInt(quantityStr);
+					}
+	
+					PreparedStatement updateStmt = conn.prepareStatement("UPDATE books SET title = ?, authorid = ?, genreid = ?, bookyear = ?, quantity = ? WHERE bookid = ?");
+					updateStmt.setString(1, title);
+					updateStmt.setInt(2, authorId);
+					updateStmt.setInt(3, genreId);
+					updateStmt.setInt(4, year);
+					updateStmt.setInt(5, quantity);
+					updateStmt.setInt(6, bookId);
+					updateStmt.executeUpdate();
+	
+					System.out.println("Book updated successfully!");
+				} else {
+					System.out.println("No book found with the specified ID.");
+				}
+			} catch (SQLException e) {
+				System.out.println("Error updating book: " + e.getMessage());
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid book ID.");
+		}
+	}
+	
+	private int handleExistingAuthor(int currentAuthorId) {
+		System.out.print("Enter new Author ID (leave blank to keep current, type 'list' to see all authors, or 'cancel' to exit): ");
+		String inputStr = input.nextLine();
+	
+		if (inputStr.equalsIgnoreCase("list")) {
+			authorService.listAuthors();
+			System.out.print("Enter Author ID: ");
+			inputStr = input.nextLine();
+		} else if (inputStr.equalsIgnoreCase("cancel") || inputStr.isEmpty()) {
+			return currentAuthorId;
+		}
+	
+		return handleAuthor(inputStr);
+	}
+	
+	private int handleExistingGenre(int currentGenreId) {
+		System.out.print("Enter new Genre ID (leave blank to keep current, type 'list' to see all genres, or 'cancel' to exit): ");
+		String inputStr = input.nextLine();
+	
+		if (inputStr.equalsIgnoreCase("list")) {
+			genreService.listGenres();
+			System.out.print("Enter Genre ID: ");
+			inputStr = input.nextLine();
+		} else if (inputStr.equalsIgnoreCase("cancel") || inputStr.isEmpty()) {
+			return currentGenreId;
+		}
+	
+		return handleGenre(inputStr);
+	}
+	
+	private int handleAuthor(String inputStr) {
+		try {
+			return Integer.parseInt(inputStr);
+		} catch (NumberFormatException e) {
+			try {
+				PreparedStatement stmt = conn.prepareStatement("SELECT AuthorID FROM Author WHERE AuthorName = ?");
+				stmt.setString(1, inputStr);
+				ResultSet rs = stmt.executeQuery();
+				if (rs.next()) {
+					return rs.getInt("AuthorID");
+				} else {
+					System.out.println("Author not found. Do you want to make this new entry? (yes/no)");
+					String decision = input.nextLine();
+					if (decision.equalsIgnoreCase("yes")) {
+						PreparedStatement insertStmt = conn.prepareStatement("INSERT INTO Author (AuthorName) VALUES (?) RETURNING AuthorID");
+						insertStmt.setString(1, inputStr);
+						ResultSet insertRs = insertStmt.executeQuery();
+						if (insertRs.next()) {
+							return insertRs.getInt("AuthorID");
+						}
+					}
+					throw new SQLException("Author creation was cancelled or failed.");
+				}
+			} catch (SQLException ex) {
+				System.out.println("Database error: " + ex.getMessage());
+				return -1;
+			}
+		}
+	}
+	
+	private int handleGenre(String inputStr) {
+		try {
+			return Integer.parseInt(inputStr);
+		} catch (NumberFormatException e) {
+			try {
+				PreparedStatement stmt = conn.prepareStatement("SELECT GenreID FROM Genre WHERE GenreName = ?");
+				stmt.setString(1, inputStr);
+				ResultSet rs = stmt.executeQuery();
+				if (rs.next()) {
+					return rs.getInt("GenreID");
+				} else {
+					System.out.println("Genre not found. Do you want to make this new entry? (yes/no)");
+					String decision = input.nextLine();
+					if (decision.equalsIgnoreCase("yes")) {
+						PreparedStatement insertStmt = conn.prepareStatement("INSERT INTO Genre (GenreName) VALUES (?) RETURNING GenreID");
+						insertStmt.setString(1, inputStr);
+						ResultSet insertRs = insertStmt.executeQuery();
+						if (insertRs.next()) {
+							return insertRs.getInt("GenreID");
+						}
+					}
+					throw new SQLException("Genre creation was cancelled or failed.");
+				}
+			} catch (SQLException ex) {
+				System.out.println("Database error: " + ex.getMessage());
+				return -1;
+			}
+		}
+	}
+	
+	private int handleNewAuthor() {
+		System.out.print("Enter Author ID (type 'list' to see all authors, or 'cancel' to exit): ");
+		String inputStr = input.nextLine();
+	
+		if (inputStr.equalsIgnoreCase("list")) {
+			authorService.listAuthors();
+			System.out.print("Enter Author ID: ");
+			inputStr = input.nextLine();
+		} else if (inputStr.equalsIgnoreCase("cancel")) {
+			return -1;
+		}
+	
+		return handleAuthor(inputStr);
+	}
+	
+	private int handleNewGenre() {
+		System.out.print("Enter Genre ID (type 'list' to see all genres, or 'cancel' to exit): ");
+		String inputStr = input.nextLine();
+	
+		if (inputStr.equalsIgnoreCase("list")) {
+			genreService.listGenres();
+			System.out.print("Enter Genre ID: ");
+			inputStr = input.nextLine();
+		} else if (inputStr.equalsIgnoreCase("cancel")) {
+			return -1;
+		}
+	
+		return handleGenre(inputStr);
+	}	
 
     public void extendLoanForMember() {
         System.out.println("\n======== Extend Book Loan for Member ========");

@@ -13,42 +13,57 @@ public class GenreService {
         this.conn = conn;
     }
 
-    public void addGenre() {
-        System.out.println("\n======== Add New Genre ========");
-        System.out.print("Enter Genre Name: ");
-        String genreName = input.nextLine();
-        try {
-            PreparedStatement stmt = conn.prepareStatement("INSERT INTO Genre (GenreName) VALUES (?)");
-            stmt.setString(1, genreName);
-            stmt.executeUpdate();
-            System.out.println("Genre added successfully!");
-        } catch (SQLException e) {
-            System.out.println("Failed to add genre: " + e.getMessage());
-        }
-    }
-
-    public void removeGenre() {
-        System.out.println("\n======== Remove Genre ========");
-        System.out.print("Enter Genre ID to remove: ");
-        try {
-            int genreId = Integer.parseInt(input.nextLine());
-            try {
-                PreparedStatement stmt = conn.prepareStatement("DELETE FROM Genre WHERE GenreID = ?");
-                stmt.setInt(1, genreId);
-                int affectedRows = stmt.executeUpdate();
-                if (affectedRows > 0) {
-                    System.out.println("Genre removed successfully!");
-                } else {
-                    System.out.println("No genre found with the specified ID.");
-                }
-            } catch (SQLException e) {
-                System.out.println("Error removing genre: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter a valid genre ID.");
-        }
-    }
-
+	public void addGenre() {
+		System.out.println("\n======== Add New Genre ========");
+		System.out.print("Enter Genre Name (or 'cancel' to exit): ");
+		String genreName = input.nextLine();
+	
+		if (genreName.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			PreparedStatement stmt = conn.prepareStatement("INSERT INTO Genre (GenreName) VALUES (?)");
+			stmt.setString(1, genreName);
+			stmt.executeUpdate();
+			System.out.println("Genre added successfully!");
+		} catch (SQLException e) {
+			System.out.println("Failed to add genre: " + e.getMessage());
+		}
+	}
+	
+	public void removeGenre() {
+		System.out.println("\n======== Remove Genre ========");
+		System.out.print("Enter Genre ID to remove or type 'list' to view all genres (or 'cancel' to exit): ");
+		String genreInput = input.nextLine();
+	
+		if (genreInput.equalsIgnoreCase("list")) {
+			listGenres();
+			System.out.print("Enter Genre ID to remove: ");
+			genreInput = input.nextLine();
+		} else if (genreInput.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int genreId = Integer.parseInt(genreInput);
+			try {
+				PreparedStatement stmt = conn.prepareStatement("DELETE FROM Genre WHERE GenreID = ?");
+				stmt.setInt(1, genreId);
+				int affectedRows = stmt.executeUpdate();
+				if (affectedRows > 0) {
+					System.out.println("Genre removed successfully!");
+				} else {
+					System.out.println("No genre found with the specified ID.");
+				}
+			} catch (SQLException e) {
+				System.out.println("Error removing genre: " + e.getMessage());
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid genre ID.");
+		}
+	}
+	
     public void listGenres() {
         System.out.println("\n======== List of Genres ========");
         try {
@@ -62,29 +77,43 @@ public class GenreService {
         }
     }
 
-    public void editGenre() {
-        System.out.println("\n======== Edit Genre ========");
-        System.out.print("Enter Genre ID to edit: ");
-        try {
-            int genreId = Integer.parseInt(input.nextLine());
-            System.out.print("Enter new Genre Name: ");
-            String newGenreName = input.nextLine();
-
-            try {
-                PreparedStatement stmt = conn.prepareStatement("UPDATE Genre SET GenreName = ? WHERE GenreID = ?");
-                stmt.setString(1, newGenreName);
-                stmt.setInt(2, genreId);
-                int affectedRows = stmt.executeUpdate();
-                if (affectedRows > 0) {
-                    System.out.println("Genre updated successfully!");
-                } else {
-                    System.out.println("No genre found with the specified ID.");
-                }
-            } catch (SQLException e) {
-                System.out.println("Error updating genre: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter a valid genre ID.");
-        }
-    }
+	public void editGenre() {
+		System.out.println("\n======== Edit Genre ========");
+		System.out.print("Enter Genre ID to edit or type 'list' to view all genres (or 'cancel' to exit): ");
+		String genreInput = input.nextLine();
+	
+		if (genreInput.equalsIgnoreCase("list")) {
+			listGenres();
+			System.out.print("Enter Genre ID: ");
+			genreInput = input.nextLine();
+		} else if (genreInput.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int genreId = Integer.parseInt(genreInput);
+			System.out.print("Enter new Genre Name (or 'cancel' to exit): ");
+			String newGenreName = input.nextLine();
+	
+			if (newGenreName.equalsIgnoreCase("cancel")) {
+				return;
+			}
+	
+			try {
+				PreparedStatement stmt = conn.prepareStatement("UPDATE Genre SET GenreName = ? WHERE GenreID = ?");
+				stmt.setString(1, newGenreName);
+				stmt.setInt(2, genreId);
+				int affectedRows = stmt.executeUpdate();
+				if (affectedRows > 0) {
+					System.out.println("Genre updated successfully!");
+				} else {
+					System.out.println("No genre found with the specified ID.");
+				}
+			} catch (SQLException e) {
+				System.out.println("Error updating genre: " + e.getMessage());
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid genre ID.");
+		}
+	}
 }
