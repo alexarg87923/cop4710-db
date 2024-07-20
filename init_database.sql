@@ -51,11 +51,7 @@ CREATE TABLE IF NOT EXISTS "User" (
     Phone VARCHAR(50),
     Address VARCHAR(255),
     MemberID INT,
-    EmployeeID INT,
-    CONSTRAINT chk_user_role CHECK (
-        (MemberID IS NOT NULL AND EmployeeID IS NULL) OR 
-        (MemberID IS NULL AND EmployeeID IS NOT NULL)
-    )
+    EmployeeID INT
 );
 
 -- Create Member and Employee tables
@@ -192,3 +188,9 @@ DROP TABLE books cascade;
 DROP TABLE employee cascade;
 DROP TABLE genre cascade;
 DROP TABLE member cascade;
+
+GRANT CONNECT ON DATABASE lim TO cop4710;
+GRANT USAGE ON SCHEMA public TO cop4710;
+GRANT CREATE ON SCHEMA public TO cop4710;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cop4710;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cop4710;

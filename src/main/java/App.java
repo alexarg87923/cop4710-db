@@ -106,40 +106,58 @@ public class App {
         try (Connection conn = DatabaseUtil.connect()) {
             conn.setAutoCommit(false);
 
+            // Insert into User table without MemberID or EmployeeID
             PreparedStatement userStmt = conn.prepareStatement("INSERT INTO \"User\" (Email, Password, Name, Phone, Address) VALUES (?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
             userStmt.setString(1, email);
             userStmt.setString(2, password);
             userStmt.setString(3, name);
             userStmt.setString(4, phone);
             userStmt.setString(5, address);
-            int affectedRows = userStmt.executeUpdate();
+            userStmt.executeUpdate();
             
-            if (affectedRows > 0) {
-                ResultSet userRs = userStmt.getGeneratedKeys();
-                if (userRs.next()) {
-                    int userId = userRs.getInt(1);
+            ResultSet userRs = userStmt.getGeneratedKeys();
+            if (userRs.next()) {
+                int userId = userRs.getInt(1);
 
-                    if (userType == 2) { // Member
-                        PreparedStatement memberStmt = conn.prepareStatement("INSERT INTO Member (MemberID, RegisterDate) VALUES (?, DEFAULT)");
-                        memberStmt.setInt(1, userId);
-                        memberStmt.executeUpdate();
-                    } else if (userType == 1) { // Employee
-                        PreparedStatement employeeStmt = conn.prepareStatement("INSERT INTO Employee (EmployeeID, Position, Salary) VALUES (?, ?, ?)");
-                        employeeStmt.setInt(1, userId);
-                        employeeStmt.setString(2, position);
-                        employeeStmt.setDouble(3, salary);
-                        employeeStmt.executeUpdate();
-                    }
+                if (userType == 2) { // Member
+                    // Insert into Member table
+                    PreparedStatement memberStmt = conn.prepareStatement("INSERT INTO Member (MemberID, RegisterDate) VALUES (?, DEFAULT)");
+                    memberStmt.setInt(1, userId);
+                    memberStmt.executeUpdate();
 
-                    conn.commit();
-                    System.out.println("You have successfully signed up.");
+                    // Update User table with MemberID
+                    PreparedStatement updateUserStmt = conn.prepareStatement("UPDATE \"User\" SET MemberID = ? WHERE UserID = ?");
+                    updateUserStmt.setInt(1, userId);
+                    updateUserStmt.setInt(2, userId);
+                    updateUserStmt.executeUpdate();
+                } else if (userType == 1) { // Employee
+                    // Insert into Employee table
+                    PreparedStatement employeeStmt = conn.prepareStatement("INSERT INTO Employee (EmployeeID, Position, Salary) VALUES (?, ?, ?)");
+                    employeeStmt.setInt(1, userId);
+                    employeeStmt.setString(2, position);
+                    employeeStmt.setDouble(3, salary);
+                    employeeStmt.executeUpdate();
+
+                    // Update User table with EmployeeID
+                    PreparedStatement updateUserStmt = conn.prepareStatement("UPDATE \"User\" SET EmployeeID = ? WHERE UserID = ?");
+                    updateUserStmt.setInt(1, userId);
+                    updateUserStmt.setInt(2, userId);
+                    updateUserStmt.executeUpdate();
                 }
+
+                conn.commit();
+                System.out.println("You have successfully signed up.");
             } else {
                 conn.rollback();
                 System.out.println("Sign up failed.");
             }
         } catch (SQLException e) {
             System.out.println("Sign up failed due to system error: " + e.getMessage());
+            try (Connection conn = DatabaseUtil.connect()) {
+                conn.rollback();
+            } catch (SQLException rollbackException) {
+                System.out.println("Rollback failed: " + rollbackException.getMessage());
+            }
         }
     }
 }
