@@ -368,145 +368,152 @@ public class BookService {
         }
     }
 
-    public void checkoutBookForMember() {
-        System.out.println("\n======== Check-out Book for Member ========");
-        System.out.print("Enter Member ID or type 'list' to view all members (or 'cancel' to exit): ");
-        String memberInput = input.nextLine();
-
-        if (memberInput.equalsIgnoreCase("list")) {
-            listMembers();
-            System.out.print("Enter Member ID: ");
-            memberInput = input.nextLine();
-        } else if (memberInput.equalsIgnoreCase("cancel")) {
-            return;
-        }
-
-        try {
-            int memberId = Integer.parseInt(memberInput);
-            System.out.print("Enter Book ID to checkout or type 'list' to view all available books (or 'cancel' to exit): ");
-            String bookInput = input.nextLine();
-
-            if (bookInput.equalsIgnoreCase("list")) {
-                listAvailableBooks();
-                System.out.print("Enter Book ID: ");
-                bookInput = input.nextLine();
-            } else if (bookInput.equalsIgnoreCase("cancel")) {
-                return;
-            }
-
-            LocalDate loanDate = LocalDate.now();
-            LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
-
-            try {
-                int bookId = Integer.parseInt(bookInput);
-                PreparedStatement stmt = conn.prepareStatement(
-                    "INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
-                stmt.setInt(1, bookId);
-                stmt.setInt(2, memberId);
-                stmt.setDate(3, java.sql.Date.valueOf(loanDate));
-                stmt.setDate(4, java.sql.Date.valueOf(dueDate));
-                stmt.executeUpdate();
-                System.out.println("Book checked out successfully!");
-            } catch (SQLException e) {
-                System.out.println("Failed to checkout book: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter valid numeric IDs.");
-        }
-    }
-
+	public void checkoutBookForMember() {
+		System.out.println("\n======== Check-out Book for Member ========");
+		System.out.print("Enter Member ID or type 'list' to view all members (or 'cancel' to exit): ");
+		String memberInput = input.nextLine();
+	
+		if (memberInput.equalsIgnoreCase("list")) {
+			listMembers();
+			System.out.print("Enter Member ID: ");
+			memberInput = input.nextLine();
+		} else if (memberInput.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int memberId = Integer.parseInt(memberInput);
+			System.out.print("Enter Book ID to checkout or type 'list' to view all available books (or 'cancel' to exit): ");
+			String bookInput = input.nextLine();
+	
+			if (bookInput.equalsIgnoreCase("list")) {
+				listAvailableBooks();
+				System.out.print("Enter Book ID: ");
+				bookInput = input.nextLine();
+			} else if (bookInput.equalsIgnoreCase("cancel")) {
+				return;
+			}
+	
+			LocalDate loanDate = LocalDate.now();
+			LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
+	
+			try {
+				int bookId = Integer.parseInt(bookInput);
+				PreparedStatement stmt = conn.prepareStatement(
+					"INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
+				stmt.setInt(1, bookId);
+				stmt.setInt(2, memberId);
+				stmt.setDate(3, java.sql.Date.valueOf(loanDate));
+				stmt.setDate(4, java.sql.Date.valueOf(dueDate));
+				stmt.executeUpdate();
+				System.out.println("Book checked out successfully!");
+			} catch (SQLException e) {
+				System.out.println("Failed to checkout book: " + e.getMessage());
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter valid numeric IDs.");
+		}
+	}
+	
 	private void listAvailableBooks() {
-        System.out.println("\n======== List of Available Books ========");
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT BookID, Title FROM Book WHERE BookID NOT IN (SELECT BookID FROM BookLoans WHERE BookReturn = 'N')");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Failed to list available books: " + e.getMessage());
-        }
-    }
+		System.out.println("\n======== List of Available Books ========");
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT b.BookID, b.Title " +
+				"FROM Books b " +
+				"LEFT JOIN BookLoans bl ON b.BookID = bl.BookID AND bl.BookReturn = 'N' " +
+				"GROUP BY b.BookID, b.Title " +
+				"HAVING COUNT(bl.BookID) = 0");
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to list available books: " + e.getMessage());
+		}
+	}
+	
+	public void checkInBookForMember() {
+		System.out.println("\n======== Check-in Book for Member ========");
+		System.out.print("Enter Member ID or type 'list' to view all members (or 'cancel' to exit): ");
+		String memberInput = input.nextLine();
+	
+		if (memberInput.equalsIgnoreCase("list")) {
+			listMembers();
+			System.out.print("Enter Member ID: ");
+			memberInput = input.nextLine();
+		} else if (memberInput.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int memberId = Integer.parseInt(memberInput);
+			System.out.print("Enter Book ID to check in or type 'list' to view all checked-out books by this member (or 'cancel' to exit): ");
+			String bookInput = input.nextLine();
+	
+			if (bookInput.equalsIgnoreCase("list")) {
+				listCheckedOutBooks(memberId);
+				System.out.print("Enter Book ID: ");
+				bookInput = input.nextLine();
+			} else if (bookInput.equalsIgnoreCase("cancel")) {
+				return;
+			}
+	
+			LocalDate returnDate = LocalDate.now();
+	
+			try {
+				int bookId = Integer.parseInt(bookInput);
+				PreparedStatement stmt = conn.prepareStatement(
+					"UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+				stmt.setDate(1, java.sql.Date.valueOf(returnDate));
+				stmt.setInt(2, bookId);
+				stmt.setInt(3, memberId);
+				int affectedRows = stmt.executeUpdate();
+				if (affectedRows > 0) {
+					System.out.println("Book checked in successfully!");
+				} else {
+					System.out.println("No matching loan record found or the book is already returned.");
+				}
+			} catch (SQLException e) {
+				System.out.println("Failed to check in book: " + e.getMessage());
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter valid numeric IDs.");
+		}
+	}
+	
+	private void listCheckedOutBooks(int memberId) {
+		System.out.println("\n======== List of Checked-out Books for Member ID: " + memberId + " ========");
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT b.BookID, b.Title FROM BookLoans bl JOIN Books b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
+			stmt.setInt(1, memberId);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to list checked-out books: " + e.getMessage());
+		}
+	}
 
 	private void listMembers() {
-        System.out.println("\n======== List of Members ========");
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT MemberID, Name FROM Member");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Failed to list members: " + e.getMessage());
-        }
-    }
-
-
-    public void checkInBookForMember() {
-        System.out.println("\n======== Check-in Book for Member ========");
-        System.out.print("Enter Member ID or type 'list' to view all members (or 'cancel' to exit): ");
-        String memberInput = input.nextLine();
-
-        if (memberInput.equalsIgnoreCase("list")) {
-            listMembers();
-            System.out.print("Enter Member ID: ");
-            memberInput = input.nextLine();
-        } else if (memberInput.equalsIgnoreCase("cancel")) {
-            return;
-        }
-
-        try {
-            int memberId = Integer.parseInt(memberInput);
-            System.out.print("Enter Book ID to check in or type 'list' to view all checked-out books (or 'cancel' to exit): ");
-            String bookInput = input.nextLine();
-
-            if (bookInput.equalsIgnoreCase("list")) {
-                listCheckedOutBooks(memberId);
-                System.out.print("Enter Book ID: ");
-                bookInput = input.nextLine();
-            } else if (bookInput.equalsIgnoreCase("cancel")) {
-                return;
-            }
-
-            LocalDate returnDate = LocalDate.now();
-
-            try {
-                int bookId = Integer.parseInt(bookInput);
-                PreparedStatement stmt = conn.prepareStatement(
-                    "UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
-                stmt.setDate(1, java.sql.Date.valueOf(returnDate));
-                stmt.setInt(2, bookId);
-                stmt.setInt(3, memberId);
-                int affectedRows = stmt.executeUpdate();
-                if (affectedRows > 0) {
-                    System.out.println("Book checked in successfully!");
-                } else {
-                    System.out.println("No matching loan record found or the book is already returned.");
-                }
-            } catch (SQLException e) {
-                System.out.println("Failed to check in book: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter valid numeric IDs.");
-        }
-    }
-
-
-    private void listCheckedOutBooks(int memberId) {
-        System.out.println("\n======== List of Checked-out Books for Member ID: " + memberId + " ========");
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT b.BookID, b.Title FROM BookLoans bl JOIN Book b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
-            stmt.setInt(1, memberId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Failed to list checked-out books: " + e.getMessage());
-        }
-    }
+		System.out.println("\n======== List of Members ========");
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT u.MemberID, u.Name " +
+				"FROM \"User\" u " +
+				"JOIN Member m ON u.MemberID = m.MemberID"
+			);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to list members: " + e.getMessage());
+		}
+	}
+	
 
     public void listBooks() {
         try {
