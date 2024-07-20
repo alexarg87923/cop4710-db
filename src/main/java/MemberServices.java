@@ -113,7 +113,7 @@ public class MemberServices {
             return BookListStatus.ERROR;
         }
     }
-	private void checkoutBook() {
+	private void checkInBook() {
 		BookListStatus result = listMemberBooks();
 		if (result == BookListStatus.ERROR) {
 			System.out.println("Unable to proceed due to an error.");
@@ -157,7 +157,7 @@ public class MemberServices {
 		}
 	}
 	
-	private void checkInBook() {
+	private void checkoutBook() {
 		System.out.print("Would you like to list all books? (yes/no/cancel): ");
 		String choice = input.nextLine();
 		if ("cancel".equalsIgnoreCase(choice)) {
