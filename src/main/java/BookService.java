@@ -75,45 +75,49 @@ public class BookService {
 		}
 	}	
     
-    public void removeBook() {
-        System.out.println("\n======== Remove a Book ========");
-        System.out.println("Would you like to list all books or search by title? (list/search)");
-        String choice = input.nextLine();
-        
-        if ("list".equalsIgnoreCase(choice)) {
-            listBooks();
-        } else if ("search".equalsIgnoreCase(choice)) {
-            System.out.print("Enter part of the title to search: ");
-            String partOfTitle = input.nextLine();
-            searchBooks(partOfTitle);
-        }
-        
-        System.out.print("Enter Book ID to remove or type 'cancel' to exit: ");
-        String inputStr = input.nextLine();
-        
-        if ("cancel".equalsIgnoreCase(inputStr)) {
-            System.out.println("Operation cancelled.");
-            return;
-        }
-        
-        try {
-            int bookId = Integer.parseInt(inputStr);
-            try {
-                PreparedStatement stmt = conn.prepareStatement("DELETE FROM books WHERE bookid = ?");
-                stmt.setInt(1, bookId);
-                int affectedRows = stmt.executeUpdate();
-                if (affectedRows > 0) {
-                    System.out.println("Book removed successfully!");
-                } else {
-                    System.out.println("No book found with the specified ID.");
-                }
-            } catch (SQLException e) {
-                System.out.println("Error removing book: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input, operation cancelled.");
-        }
-    }
+	public void removeBook() {
+		System.out.println("\n======== Remove a Book ========");
+		System.out.print("Enter Book ID to remove or type 'list' to view all books (or 'cancel' to exit): ");
+		String bookInput = input.nextLine();
+	
+		if (bookInput.equalsIgnoreCase("list")) {
+			listBooks();
+			System.out.print("Enter Book ID to remove: ");
+			bookInput = input.nextLine();
+		} else if (bookInput.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int bookId = Integer.parseInt(bookInput);
+			
+			// First, delete all book loans referencing this book
+			try {
+				PreparedStatement deleteLoansStmt = conn.prepareStatement("DELETE FROM BookLoans WHERE BookID = ?");
+				deleteLoansStmt.setInt(1, bookId);
+				deleteLoansStmt.executeUpdate();
+			} catch (SQLException e) {
+				System.out.println("Failed to remove book loans: " + e.getMessage());
+				return;
+			}
+	
+			// Then, delete the book
+			try {
+				PreparedStatement stmt = conn.prepareStatement("DELETE FROM books WHERE bookid = ?");
+				stmt.setInt(1, bookId);
+				int affectedRows = stmt.executeUpdate();
+				if (affectedRows > 0) {
+					System.out.println("Book removed successfully!");
+				} else {
+					System.out.println("No book found with the specified ID.");
+				}
+			} catch (SQLException e) {
+				System.out.println("Error removing book: " + e.getMessage());
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid book ID.");
+		}
+	}
     
 	public void editBookEntry() {
 		System.out.println("\n======== Edit a Book Entry ========");
