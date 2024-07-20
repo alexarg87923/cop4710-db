@@ -317,56 +317,98 @@ public class BookService {
 		return handleGenre(inputStr);
 	}	
 
-    public void extendLoanForMember() {
-        System.out.println("\n======== Extend Book Loan for Member ========");
-        System.out.print("Enter Member ID or type 'list' to view all members (or 'cancel' to exit): ");
-        String memberInput = input.nextLine();
-
-        if (memberInput.equalsIgnoreCase("list")) {
-            listMembers();
-            System.out.print("Enter Member ID: ");
-            memberInput = input.nextLine();
-        } else if (memberInput.equalsIgnoreCase("cancel")) {
-            return;
-        }
-
-        try {
-            int memberId = Integer.parseInt(memberInput);
-            System.out.print("Enter Book ID to extend loan or type 'cancel' to exit: ");
-            String bookInput = input.nextLine();
-
-            if (bookInput.equalsIgnoreCase("cancel")) {
-                return;
-            }
-
-            try {
-                int bookId = Integer.parseInt(bookInput);
-                PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT DueDate FROM BookLoans WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
-                stmt.setInt(1, bookId);
-                stmt.setInt(2, memberId);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) {
-                    LocalDate currentDueDate = rs.getDate("DueDate").toLocalDate();
-                    LocalDate newDueDate = currentDueDate.plusDays(14); // Extend loan by 14 days
-
-                    PreparedStatement updateStmt = conn.prepareStatement(
-                        "UPDATE BookLoans SET DueDate = ? WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
-                    updateStmt.setDate(1, java.sql.Date.valueOf(newDueDate));
-                    updateStmt.setInt(2, bookId);
-                    updateStmt.setInt(3, memberId);
-                    updateStmt.executeUpdate();
-                    System.out.println("Loan extended successfully!");
-                } else {
-                    System.out.println("No active loan found for the given Book ID and Member ID.");
-                }
-            } catch (SQLException e) {
-                System.out.println("Failed to extend loan: " + e.getMessage());
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Please enter valid numeric IDs.");
-        }
-    }
+	public void extendLoanForMember() {
+		System.out.println("\n======== Extend Book Loan for Member ========");
+		System.out.print("Enter Member ID or type 'list' to view all members with active loans (or 'cancel' to exit): ");
+		String memberInput = input.nextLine();
+	
+		if (memberInput.equalsIgnoreCase("list")) {
+			listMembersWithLoans();
+			System.out.print("Enter Member ID: ");
+			memberInput = input.nextLine();
+		} else if (memberInput.equalsIgnoreCase("cancel")) {
+			return;
+		}
+	
+		try {
+			int memberId = Integer.parseInt(memberInput);
+			
+			// Ask if user wants to list the books the member has
+			System.out.print("Do you want to list the books this member has? (yes/no): ");
+			String listBooksResponse = input.nextLine();
+			
+			if (listBooksResponse.equalsIgnoreCase("yes")) {
+				listCheckedOutBooks(memberId);
+			}
+	
+			System.out.print("Enter Book ID to extend loan or type 'cancel' to exit: ");
+			String bookInput = input.nextLine();
+	
+			if (bookInput.equalsIgnoreCase("cancel")) {
+				return;
+			}
+	
+			try {
+				int bookId = Integer.parseInt(bookInput);
+				PreparedStatement stmt = conn.prepareStatement(
+					"SELECT DueDate FROM BookLoans WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+				stmt.setInt(1, bookId);
+				stmt.setInt(2, memberId);
+				ResultSet rs = stmt.executeQuery();
+				if (rs.next()) {
+					LocalDate currentDueDate = rs.getDate("DueDate").toLocalDate();
+					LocalDate newDueDate = currentDueDate.plusDays(14); // Extend loan by 14 days
+	
+					PreparedStatement updateStmt = conn.prepareStatement(
+						"UPDATE BookLoans SET DueDate = ? WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
+					updateStmt.setDate(1, java.sql.Date.valueOf(newDueDate));
+					updateStmt.setInt(2, bookId);
+					updateStmt.setInt(3, memberId);
+					updateStmt.executeUpdate();
+					System.out.println("Loan extended successfully!");
+				} else {
+					System.out.println("No active loan found for the given Book ID and Member ID.");
+				}
+			} catch (SQLException e) {
+				System.out.println("Failed to extend loan: " + e.getMessage());
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter valid numeric IDs.");
+		}
+	}
+	
+	private void listMembersWithLoans() {
+		System.out.println("\n======== List of Members with Active Loans ========");
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT DISTINCT u.MemberID, u.Name " +
+				"FROM \"User\" u " +
+				"JOIN BookLoans bl ON u.MemberID = bl.MemberID " +
+				"WHERE bl.BookReturn = 'N'");
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Member ID: " + rs.getInt("MemberID") + ", Name: " + rs.getString("Name"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to list members with active loans: " + e.getMessage());
+		}
+	}
+	
+	private void listCheckedOutBooks(int memberId) {
+		System.out.println("\n======== List of Checked-out Books for Member ID: " + memberId + " ========");
+		try {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT b.BookID, b.Title FROM BookLoans bl JOIN Books b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
+			stmt.setInt(1, memberId);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
+			}
+		} catch (SQLException e) {
+			System.out.println("Failed to list checked-out books: " + e.getMessage());
+		}
+	}
+	
 
 	public void checkoutBookForMember() {
 		System.out.println("\n======== Check-out Book for Member ========");
@@ -432,7 +474,7 @@ public class BookService {
 			System.out.println("Failed to list available books: " + e.getMessage());
 		}
 	}
-	
+
 	public void checkInBookForMember() {
 		System.out.println("\n======== Check-in Book for Member ========");
 		System.out.print("Enter Member ID or type 'list' to view all members (or 'cancel' to exit): ");
@@ -479,21 +521,6 @@ public class BookService {
 			}
 		} catch (NumberFormatException e) {
 			System.out.println("Invalid input. Please enter valid numeric IDs.");
-		}
-	}
-	
-	private void listCheckedOutBooks(int memberId) {
-		System.out.println("\n======== List of Checked-out Books for Member ID: " + memberId + " ========");
-		try {
-			PreparedStatement stmt = conn.prepareStatement(
-				"SELECT b.BookID, b.Title FROM BookLoans bl JOIN Books b ON bl.BookID = b.BookID WHERE bl.MemberID = ? AND bl.BookReturn = 'N'");
-			stmt.setInt(1, memberId);
-			ResultSet rs = stmt.executeQuery();
-			while (rs.next()) {
-				System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
-			}
-		} catch (SQLException e) {
-			System.out.println("Failed to list checked-out books: " + e.getMessage());
 		}
 	}
 
