@@ -22,6 +22,15 @@
 
 -- SQL script content to be executed from Java JDBC:
 -- Create Author and Genre tables
+
+DROP TABLE "User" cascade;
+DROP TABLE author cascade;
+DROP TABLE bookloans cascade;
+DROP TABLE books cascade;
+DROP TABLE employee cascade;
+DROP TABLE genre cascade;
+DROP TABLE member cascade;
+
 CREATE TABLE IF NOT EXISTS Author (
     AuthorID SERIAL PRIMARY KEY,
     AuthorName VARCHAR(255) NOT NULL UNIQUE
@@ -36,8 +45,8 @@ CREATE TABLE IF NOT EXISTS Genre (
 CREATE TABLE IF NOT EXISTS Books (
     BookID SERIAL PRIMARY KEY,
     Title VARCHAR(255) NOT NULL,
-    AuthorID INT REFERENCES Author(AuthorID),
-    GenreID INT REFERENCES Genre(GenreID),
+    AuthorID INT REFERENCES Author(AuthorID) ON DELETE SET NULL,
+    GenreID INT REFERENCES Genre(GenreID) ON DELETE SET NULL,
     BookYear INT,
     Quantity INT NOT NULL
 );
@@ -180,14 +189,6 @@ WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Boo
 INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookReturn, LoanPrice)
 SELECT (SELECT BookID FROM Books WHERE Title = 'Murder on the Orient Express'), 3, '2022-06-01', NULL, '2022-06-15', 'N', 8
 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'Murder on the Orient Express') AND MemberID = 3 AND LoanDate = '2022-06-01');
-
-DROP TABLE "User" cascade;
-DROP TABLE author cascade;
-DROP TABLE bookloans cascade;
-DROP TABLE books cascade;
-DROP TABLE employee cascade;
-DROP TABLE genre cascade;
-DROP TABLE member cascade;
 
 GRANT CONNECT ON DATABASE lim TO cop4710;
 GRANT USAGE ON SCHEMA public TO cop4710;
