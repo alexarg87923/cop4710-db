@@ -29,7 +29,7 @@ public class EmployeeServices {
             System.out.println("8. Extend Loan for Member\n9. Add Author\n10. Remove Author");
             System.out.println("11. List Authors\n12. Edit Author\n13. Add Genre");
             System.out.println("14. Remove Genre\n15. List Genre\n16. Edit Genre");
-            System.out.println("17. List All Members\n18. List/Search Members\n19. Log Out");
+            System.out.println("17. List All Members\n18. List/Search Members\n19. View Loan Records\n20. Log Out");
             System.out.print("Select an option: ");
             try {
                 option = Integer.parseInt(input.nextLine());
@@ -90,7 +90,10 @@ public class EmployeeServices {
                     case 18:
                         listMembers();
                         break;
-                    case 19:
+					case 19:
+						listLoanRecords();
+                        break;
+                    case 20:
                         System.out.println("Logging out...");
                         return; // Exit the loop on logout
                     default:
@@ -100,7 +103,65 @@ public class EmployeeServices {
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input. Please enter a valid number.");
             }
-        } while (option != 19); // Ensure loop exits correctly
+        } while (option != 20); // Ensure loop exits correctly
+    }
+
+    public void listLoanRecords() {
+        System.out.println("Would you like to search loan records by member name or list all loan records? (search/list, type 'cancel' to exit)");
+        String choice = input.nextLine();
+
+        if ("cancel".equalsIgnoreCase(choice)) {
+            System.out.println("Operation cancelled.");
+            return;
+        }
+
+        if ("search".equalsIgnoreCase(choice)) {
+            System.out.print("Enter member name or part of the name to search (type 'cancel' to exit): ");
+            String name = input.nextLine();
+            if ("cancel".equalsIgnoreCase(name)) {
+                System.out.println("Operation cancelled.");
+                return;
+            }
+            searchLoanRecordsByMemberName(name);
+        } else {
+            listAllLoanRecords();
+        }
+    }
+
+    private void listAllLoanRecords() {
+        String sql = "SELECT * FROM loan_records";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            printLoanRecords(rs);
+        } catch (SQLException e) {
+            System.out.println("Error fetching loan records: " + e.getMessage());
+        }
+    }
+
+    private void searchLoanRecordsByMemberName(String name) {
+        String sql = "SELECT * FROM loan_records WHERE MemberName ILIKE ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "%" + name + "%");
+            ResultSet rs = stmt.executeQuery();
+            printLoanRecords(rs);
+        } catch (SQLException e) {
+            System.out.println("Error searching loan records: " + e.getMessage());
+        }
+    }
+
+    private void printLoanRecords(ResultSet rs) throws SQLException {
+        while (rs.next()) {
+            System.out.println("Loan ID: " + rs.getInt("LoanID") +
+                ", Book: " + rs.getString("BookTitle") +
+                ", Member: " + rs.getString("MemberName") +
+                ", Loan Date: " + rs.getDate("LoanDate") +
+                ", Return Date: " + rs.getDate("ReturnDate") +
+                ", Due Date: " + rs.getDate("DueDate") +
+                ", Book Return: " + rs.getString("BookReturn") +
+                ", Loan Price: " + rs.getDouble("LoanPrice"));
+        }
     }
 
     private void listMembers() {

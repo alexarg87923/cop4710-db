@@ -205,6 +205,28 @@ BEGIN
 END;
 $$;
 
+CREATE VIEW loan_records AS
+SELECT 
+    bl.LoanID,
+    bl.BookID,
+    b.Title AS BookTitle,
+    bl.MemberID,
+    u.Name AS MemberName,
+    bl.LoanDate,
+    bl.ReturnDate,
+    bl.DueDate,
+    bl.BookReturn,
+    bl.LoanPrice
+FROM 
+    BookLoans bl
+JOIN 
+    Books b ON bl.BookID = b.BookID
+JOIN 
+    Member m ON bl.MemberID = m.MemberID
+JOIN 
+    "User" u ON m.MemberID = u.MemberID;
+
+
 GRANT CONNECT ON DATABASE lim TO member_role;
 GRANT USAGE ON SCHEMA public TO member_role;
 GRANT SELECT ON TABLE Books, Author, Genre TO member_role;
@@ -213,3 +235,4 @@ GRANT CONNECT ON DATABASE lim TO employee_role;
 GRANT USAGE ON SCHEMA public TO employee_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE Books, Author, Genre, "User", Member, Employee TO employee_role;
 GRANT SELECT, UPDATE ON TABLE Books TO employee_role;
+GRANT SELECT ON loan_records TO employee_role;
