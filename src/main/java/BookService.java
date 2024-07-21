@@ -421,7 +421,7 @@ public class BookService {
             String bookInput = input.nextLine();
 
             if (bookInput.equalsIgnoreCase("list")) {
-                listAvailableBooks();
+                listBooks();
                 System.out.print("Enter Book ID or type 'cancel' to exit: ");
                 bookInput = input.nextLine();
             }
