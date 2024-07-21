@@ -44,12 +44,12 @@ public class UserService {
     public static boolean saveSignUp(String email, String password, String name, String phone, String address, int userType, String position, double salary) {
         Connection conn = null;
         try {
-            // Use the default user for signing up new users
             conn = DatabaseUtil.connect("cop4710", "yMJ6zenikfum@3a");
             conn.setAutoCommit(false);
 
-            // Insert into User table without MemberID or EmployeeID
-            PreparedStatement userStmt = conn.prepareStatement("INSERT INTO \"User\" (Email, Password, Name, Phone, Address) VALUES (?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS);
+            PreparedStatement userStmt = conn.prepareStatement(
+                "INSERT INTO \"User\" (Email, Password, Name, Phone, Address) VALUES (?, ?, ?, ?, ?)", PreparedStatement.RETURN_GENERATED_KEYS
+            );
             userStmt.setString(1, email);
             userStmt.setString(2, password);
             userStmt.setString(3, name);
@@ -62,26 +62,30 @@ public class UserService {
                 int userId = userRs.getInt(1);
 
                 if (userType == 2) { // Member
-                    // Insert into Member table
-                    PreparedStatement memberStmt = conn.prepareStatement("INSERT INTO Member (MemberID, RegisterDate) VALUES (?, DEFAULT)");
+                    PreparedStatement memberStmt = conn.prepareStatement(
+                        "INSERT INTO Member (MemberID, RegisterDate) VALUES (?, DEFAULT)"
+                    );
                     memberStmt.setInt(1, userId);
                     memberStmt.executeUpdate();
 
-                    // Update User table with MemberID
-                    PreparedStatement updateUserStmt = conn.prepareStatement("UPDATE \"User\" SET MemberID = ? WHERE UserID = ?");
+                    PreparedStatement updateUserStmt = conn.prepareStatement(
+                        "UPDATE \"User\" SET MemberID = ? WHERE UserID = ?"
+                    );
                     updateUserStmt.setInt(1, userId);
                     updateUserStmt.setInt(2, userId);
                     updateUserStmt.executeUpdate();
                 } else if (userType == 1) { // Employee
-                    // Insert into Employee table
-                    PreparedStatement employeeStmt = conn.prepareStatement("INSERT INTO Employee (EmployeeID, Position, Salary) VALUES (?, ?, ?)");
+                    PreparedStatement employeeStmt = conn.prepareStatement(
+                        "INSERT INTO Employee (EmployeeID, Position, Salary) VALUES (?, ?, ?)"
+                    );
                     employeeStmt.setInt(1, userId);
                     employeeStmt.setString(2, position);
                     employeeStmt.setDouble(3, salary);
                     employeeStmt.executeUpdate();
 
-                    // Update User table with EmployeeID
-                    PreparedStatement updateUserStmt = conn.prepareStatement("UPDATE \"User\" SET EmployeeID = ? WHERE UserID = ?");
+                    PreparedStatement updateUserStmt = conn.prepareStatement(
+                        "UPDATE \"User\" SET EmployeeID = ? WHERE UserID = ?"
+                    );
                     updateUserStmt.setInt(1, userId);
                     updateUserStmt.setInt(2, userId);
                     updateUserStmt.executeUpdate();

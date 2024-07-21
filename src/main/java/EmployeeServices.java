@@ -5,13 +5,12 @@ import java.sql.SQLException;
 import java.util.Scanner;
 
 public class EmployeeServices {
-
     private Scanner input;
     private Connection conn;
     private GenreService genreService;
     private AuthorService authorService;
     private BookService bookService;
-    
+
     public EmployeeServices(Scanner input, Connection conn) {
         this.input = input;
         this.conn = conn;
@@ -90,8 +89,8 @@ public class EmployeeServices {
                     case 18:
                         listMembers();
                         break;
-					case 19:
-						listLoanRecords();
+                    case 19:
+                        listLoanRecords();
                         break;
                     case 20:
                         System.out.println("Logging out...");
@@ -106,6 +105,7 @@ public class EmployeeServices {
         } while (option != 20); // Ensure loop exits correctly
     }
 
+    // Methods for listing and searching do not modify database state, hence do not require transaction management (commit/rollback).
     public void listLoanRecords() {
         System.out.println("Would you like to search loan records by member name or list all loan records? (search/list, type 'cancel' to exit)");
         String choice = input.nextLine();
