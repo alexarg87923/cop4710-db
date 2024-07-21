@@ -233,6 +233,6 @@ GRANT SELECT ON TABLE Books, Author, Genre TO member_role;
 
 GRANT CONNECT ON DATABASE lim TO employee_role;
 GRANT USAGE ON SCHEMA public TO employee_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE Books, Author, Genre, "User", Member, Employee TO employee_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE Books, Author, Genre, "User", Member, Employee, BookLoans TO employee_role;
 GRANT SELECT, UPDATE ON TABLE Books TO employee_role;
 GRANT SELECT ON loan_records TO employee_role;
