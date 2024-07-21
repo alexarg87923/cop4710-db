@@ -190,6 +190,21 @@ INSERT INTO BookLoans (BookID, MemberID, LoanDate, ReturnDate, DueDate, BookRetu
 SELECT (SELECT BookID FROM Books WHERE Title = 'Murder on the Orient Express'), 3, '2022-06-01', NULL, '2022-06-15', 'N', 8
 WHERE NOT EXISTS (SELECT 1 FROM BookLoans WHERE BookID = (SELECT BookID FROM Books WHERE Title = 'Murder on the Orient Express') AND MemberID = 3 AND LoanDate = '2022-06-01');
 
+CREATE OR REPLACE PROCEDURE get_available_books(OUT ref_result REFCURSOR)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RAISE NOTICE 'Opening cursor for available books';
+    OPEN ref_result FOR
+        SELECT b.BookID, b.Title
+        FROM Books b
+        LEFT JOIN BookLoans bl ON b.BookID = bl.BookID AND bl.BookReturn = 'N'
+        GROUP BY b.BookID, b.Title
+        HAVING COUNT(bl.BookID) = 0;
+    RAISE NOTICE 'Cursor opened';
+END;
+$$;
+
 GRANT CONNECT ON DATABASE lim TO cop4710;
 GRANT USAGE ON SCHEMA public TO cop4710;
 GRANT CREATE ON SCHEMA public TO cop4710;

@@ -8,6 +8,14 @@ public class DatabaseUtil {
     private static final String PASSWORD = "yMJ6zenikfum@3a";
 
     public static Connection connect() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+		Connection conn = null;
+        try {
+			conn = DriverManager.getConnection(URL, USER, PASSWORD);
+			conn.setAutoCommit(false);
+            System.out.println("Connected to the PostgreSQL server successfully.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+		return conn;
     }
 }

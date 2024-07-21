@@ -1,9 +1,11 @@
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Scanner;
+import java.sql.Types;
 
 public class BookService {
     private Scanner input;
@@ -460,24 +462,34 @@ public class BookService {
 			System.out.println("Invalid input. Please enter valid numeric IDs.");
 		}
 	}	
-	
-	private void listAvailableBooks() {
-		System.out.println("\n======== List of Available Books ========");
-		try {
-			PreparedStatement stmt = conn.prepareStatement(
-				"SELECT b.BookID, b.Title " +
-				"FROM Books b " +
-				"LEFT JOIN BookLoans bl ON b.BookID = bl.BookID AND bl.BookReturn = 'N' " +
-				"GROUP BY b.BookID, b.Title " +
-				"HAVING COUNT(bl.BookID) = 0");
-			ResultSet rs = stmt.executeQuery();
-			while (rs.next()) {
-				System.out.println("Book ID: " + rs.getInt("BookID") + ", Title: " + rs.getString("Title"));
-			}
-		} catch (SQLException e) {
-			System.out.println("Failed to list available books: " + e.getMessage());
-		}
-	}
+	public void listAvailableBooks() {
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            callableStatement = conn.prepareCall("CALL get_available_books(?)");
+            callableStatement.registerOutParameter(1, Types.REF_CURSOR);
+
+            callableStatement.execute();
+
+            resultSet = (ResultSet) callableStatement.getObject(1);
+
+            System.out.println("\n======== List of Available Books ========");
+            while (resultSet.next()) {
+                System.out.println("Book ID: " + resultSet.getInt("BookID") + ", Title: " + resultSet.getString("Title"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Failed to list available books: " + e.getMessage());
+        } finally {
+            try {
+                if (resultSet != null) resultSet.close();
+                if (callableStatement != null) callableStatement.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                System.out.println("Failed to close resources: " + e.getMessage());
+            }
+        }
+    }
 
 	public void checkInBookForMember() {
 		System.out.println("\n======== Check-in Book for Member ========");
