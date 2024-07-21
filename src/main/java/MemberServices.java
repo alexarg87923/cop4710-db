@@ -18,17 +18,14 @@ public class MemberServices {
     private BookService bookService;
 	private int loggedInMemberId;
 
-    public MemberServices(Scanner input, int loggedInMemberId) {
+
+    public MemberServices(Scanner input, int loggedInMemberId, Connection conn) {
         this.input = input;
         this.loggedInMemberId = loggedInMemberId;
-        try {
-            this.conn = DatabaseUtil.connect();
-            AuthorService authorService = new AuthorService(input, conn);
-            GenreService genreService = new GenreService(input, conn);
-            this.bookService = new BookService(input, conn, authorService, genreService);
-        } catch (SQLException e) {
-            System.out.println("Error connecting to the database: " + e.getMessage());
-        }
+        this.conn = conn;
+        AuthorService authorService = new AuthorService(input, conn);
+        GenreService genreService = new GenreService(input, conn);
+        this.bookService = new BookService(input, conn, authorService, genreService);
     }
 
     public void showMemberHomeScreen() {

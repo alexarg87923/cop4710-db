@@ -12,16 +12,12 @@ public class EmployeeServices {
     private AuthorService authorService;
     private BookService bookService;
     
-    public EmployeeServices(Scanner input) {
+    public EmployeeServices(Scanner input, Connection conn) {
         this.input = input;
-        try {
-            this.conn = DatabaseUtil.connect();
-            this.genreService = new GenreService(input, conn);
-            this.authorService = new AuthorService(input, conn);
-            this.bookService = new BookService(input, conn, authorService, genreService);
-        } catch (SQLException e) {
-            System.out.println("Error connecting to the database: " + e.getMessage());
-        }
+        this.conn = conn;
+        this.genreService = new GenreService(input, conn);
+        this.authorService = new AuthorService(input, conn);
+        this.bookService = new BookService(input, conn, authorService, genreService);
     }
 
     public void showEmployeeHomeScreen() {

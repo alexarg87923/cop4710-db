@@ -11,9 +11,9 @@
 -----------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------
--- -- Create a user and grant privileges
--- CREATE USER cop4710 WITH ENCRYPTED PASSWORD 'yMJ6zenikfum@3a';
--- GRANT ALL PRIVILEGES ON DATABASE lim TO cop4710;
+-- Creating roles for members and employees
+-- CREATE ROLE member_role NOINHERIT LOGIN PASSWORD 'member123';
+-- CREATE ROLE employee_role NOINHERIT LOGIN PASSWORD 'employee123';
 -----------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------
@@ -205,8 +205,11 @@ BEGIN
 END;
 $$;
 
-GRANT CONNECT ON DATABASE lim TO cop4710;
-GRANT USAGE ON SCHEMA public TO cop4710;
-GRANT CREATE ON SCHEMA public TO cop4710;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cop4710;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cop4710;
+GRANT CONNECT ON DATABASE lim TO member_role;
+GRANT USAGE ON SCHEMA public TO member_role;
+GRANT SELECT ON TABLE Books, Author, Genre TO member_role;
+
+GRANT CONNECT ON DATABASE lim TO employee_role;
+GRANT USAGE ON SCHEMA public TO employee_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE Books, Author, Genre, "User", Member, Employee TO employee_role;
+GRANT SELECT, UPDATE ON TABLE Books TO employee_role;
