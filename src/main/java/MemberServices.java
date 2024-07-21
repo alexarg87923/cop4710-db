@@ -95,6 +95,7 @@ public class MemberServices {
     }
 
 	private void checkInBook() {
+		System.out.println("\n======== Check-in Book ========");
 		BookListStatus result = listMemberBooks();
 		if (result == BookListStatus.ERROR) {
 			System.out.println("Unable to proceed due to an error.");
@@ -104,78 +105,75 @@ public class MemberServices {
 			return;
 		}
 	
-		System.out.print("Enter Book ID to return (type 'cancel' to exit): ");
+		System.out.print("Enter Book ID to return (or 'cancel' to exit): ");
 		String inputLine = input.nextLine();
-		if ("cancel".equalsIgnoreCase(inputLine)) {
+	
+		if (inputLine.equalsIgnoreCase("cancel")) {
 			System.out.println("Operation cancelled.");
 			return;
 		}
 	
-		int bookId;
 		try {
-			bookId = Integer.parseInt(inputLine);
-		} catch (NumberFormatException e) {
-			System.out.println("Invalid input. Please enter a valid book ID.");
-			return;
-		}
+			int bookId = Integer.parseInt(inputLine);
+			LocalDate returnDate = LocalDate.now();
 	
-		LocalDate returnDate = LocalDate.now();
-	
-		try {
 			PreparedStatement stmt = conn.prepareStatement(
 				"UPDATE BookLoans SET ReturnDate = ?, BookReturn = 'Y' WHERE BookID = ? AND MemberID = ? AND BookReturn = 'N'");
 			stmt.setDate(1, java.sql.Date.valueOf(returnDate));
 			stmt.setInt(2, bookId);
 			stmt.setInt(3, loggedInMemberId);
+	
 			int affectedRows = stmt.executeUpdate();
 			if (affectedRows > 0) {
 				System.out.println("Book returned successfully!");
 			} else {
 				System.out.println("No matching loan record found or the book is already returned.");
 			}
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid book ID.");
 		} catch (SQLException e) {
 			System.out.println("Failed to return book: " + e.getMessage());
 		}
 	}
 	
 	private void checkoutBook() {
+		System.out.println("\n======== Check-out Book ========");
 		System.out.print("Would you like to list all books? (yes/no/cancel): ");
 		String choice = input.nextLine();
-		if ("cancel".equalsIgnoreCase(choice)) {
+		
+		if (choice.equalsIgnoreCase("cancel")) {
 			System.out.println("Operation cancelled.");
 			return;
 		}
-	
-		if ("yes".equalsIgnoreCase(choice)) {
+		
+		if (choice.equalsIgnoreCase("yes")) {
 			listAllBooks();
 		}
-	
-		System.out.print("Enter Book ID to rent (type 'cancel' to exit): ");
+		
+		System.out.print("Enter Book ID to rent (or 'cancel' to exit): ");
 		String bookIdInput = input.nextLine();
-		if ("cancel".equalsIgnoreCase(bookIdInput)) {
+		
+		if (bookIdInput.equalsIgnoreCase("cancel")) {
 			System.out.println("Operation cancelled.");
 			return;
 		}
-		int bookId;
+		
 		try {
-			bookId = Integer.parseInt(bookIdInput);
-		} catch (NumberFormatException e) {
-			System.out.println("Invalid input. Please enter a valid book ID.");
-			return;
-		}
+			int bookId = Integer.parseInt(bookIdInput);
+			LocalDate loanDate = LocalDate.now();
+			LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
 	
-		LocalDate loanDate = LocalDate.now();
-		LocalDate dueDate = loanDate.plusDays(14); // Assuming a 14-day loan period
-	
-		try {
 			PreparedStatement stmt = conn.prepareStatement(
 				"INSERT INTO BookLoans (BookID, MemberID, LoanDate, DueDate, BookReturn, LoanPrice) VALUES (?, ?, ?, ?, 'N', 15)");
 			stmt.setInt(1, bookId);
 			stmt.setInt(2, loggedInMemberId);
 			stmt.setDate(3, java.sql.Date.valueOf(loanDate));
 			stmt.setDate(4, java.sql.Date.valueOf(dueDate));
+			
 			stmt.executeUpdate();
 			System.out.println("Book rented successfully!");
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid input. Please enter a valid book ID.");
 		} catch (SQLException e) {
 			System.out.println("Failed to rent book: " + e.getMessage());
 		}

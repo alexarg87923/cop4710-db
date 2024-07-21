@@ -234,7 +234,8 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cop4710;
 
 GRANT CONNECT ON DATABASE lim TO member_role;
 GRANT USAGE ON SCHEMA public TO member_role;
-GRANT SELECT ON TABLE Books, Author, Genre, BookLoans TO member_role;
+GRANT SELECT ON TABLE Books, Author, Genre TO member_role;
+GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE BookLoans TO member_role;
 
 GRANT CONNECT ON DATABASE lim TO employee_role;
 GRANT USAGE ON SCHEMA public TO employee_role;
